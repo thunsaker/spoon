@@ -1,0 +1,44 @@
+{
+    "versionLabel": "1.0",
+    "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
+    "appKeys": {
+        "index": 2,
+        "name": 4,
+        "refresh": 6,
+        "token": 0,
+        "location": 1,
+        "address": 5,
+        "id": 3
+    },
+    "longName": "Spoon",
+    "versionCode": 1,
+    "capabilities": [
+        "location",
+        "configurable"
+    ],
+    "shortName": "Spoon",
+    "companyName": "Thomas Hunsaker",
+    "watchapp": {
+        "watchface": false
+    },
+    "resources": {
+        "media": [
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_OK",
+                "file": "images/check_black.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_APP_LOGO_LONG",
+                "file": "images/spoon_long_med.png"
+            },
+            {
+                "menuIcon": true,
+                "type": "png",
+                "name": "IMAGE_APP_ICON",
+                "file": "images/spoon_pixelated_24x28.png"
+            }
+        ]
+    }
+}

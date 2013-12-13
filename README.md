@@ -1,7 +1,7 @@
 spoon
 =====
 
-Spoon is a simple (and highly experimental) [Foursquare](http://foursquare.com) check-in app. The watchapp lists nearby venues using your phone's location. Pick a venue and check-in. All from your wrist.
+Spoon is a simple (and highly experimental) [Foursquare](http://foursquare.com) check-in app for Pebble. The watchapp lists nearby venues using your phone's location. Pick a venue and check-in. All from your wrist.
 
 Download: http://www.mypebblefaces.com/apps/10947/8172/  
 App Info: http://thomashunsaker.com/apps/soup/spoon.html

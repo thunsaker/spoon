@@ -9,7 +9,8 @@ static char venueid[128];
 static char venuename[512];
 
 static Window *window;
-static TextLayer *text_layer;
+static TextLayer *text_layer_prompt;
+static TextLayer *text_layer_name;
 static ActionBarLayer* actionBar;
 static GBitmap* buttonCheck;
 
@@ -30,7 +31,6 @@ void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512
 		dict_write_end(iter);
 		
 		app_message_outbox_send();
-		window_stack_pop(true);
 	} else {
 		return;
 	}
@@ -39,6 +39,7 @@ void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512
 void down_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
 	vibes_double_pulse();
 	send_checkin_request_confirmation(venueid, venuename);
+	window_stack_pop(true);
 }
 
 void click_config_confirmation(void *context) {
@@ -54,12 +55,19 @@ void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
 	Layer* window_layer = window_get_root_layer(window);
 	
 	GRect bounds = layer_get_frame(window_layer);
-	text_layer = text_layer_create(GRect(5,5, 144 - 30, 144));
-	text_layer_set_text_alignment(text_layer, GTextAlignmentLeft);
-	text_layer_set_overflow_mode(text_layer, GTextOverflowModeWordWrap);
-	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-	text_layer_set_text(text_layer, "Are you sure you want to check in?");
-	layer_add_child(window_layer, (Layer *)text_layer);
+	text_layer_prompt = text_layer_create(GRect(5,5, 144 - 30, 40));
+	text_layer_set_text_alignment(text_layer_prompt, GTextAlignmentLeft);
+	text_layer_set_overflow_mode(text_layer_prompt, GTextOverflowModeWordWrap);
+	text_layer_set_font(text_layer_prompt, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+	text_layer_set_text(text_layer_prompt, "Check in?");
+	layer_add_child(window_layer, (Layer *)text_layer_prompt);
+	
+	text_layer_name = text_layer_create(GRect(5,50, 144 - 30, 100));
+	text_layer_set_text_alignment(text_layer_name, GTextAlignmentLeft);
+	text_layer_set_overflow_mode(text_layer_name, GTextOverflowModeWordWrap);
+	text_layer_set_font(text_layer_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+	text_layer_set_text(text_layer_name, venuename);
+	layer_add_child(window_layer, (Layer *)text_layer_name);
 	
 	actionBar = action_bar_layer_create();
 	action_bar_layer_set_click_config_provider(actionBar, (ClickConfigProvider) click_config_confirmation);

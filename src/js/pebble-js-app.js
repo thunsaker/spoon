@@ -38,6 +38,7 @@ Pebble.addEventListener("webviewclosed",
 		if(configuration['result'] == true) {
 			localStorage["foursquare_token"] = configuration['token'];
 			notifyPebbleConnected(localStorage['foursquare_token'].toString());
+			isNewList = true;
 			getClosestVenues();
 		} else {
 			Pebble.showSimpleNotificationOnPebble("Spoon", ":( Connection Failed. Try Again.");

@@ -16,6 +16,7 @@ static ActionBarLayer *action_bar;
 static SimpleMenuLayer *venue_menu_layer;
 static SimpleMenuSection menu_sections[1];
 static SimpleMenuItem menu_items[MAX_VENUES];
+static bool switchTip = true;
 
 static void image_layer_update_callback(Layer *layer, GContext *ctx) {
 	graphics_draw_bitmap_in_rect(ctx, image_spoon, layer_get_bounds(layer));
@@ -35,8 +36,6 @@ void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, voi
 }
 
 void getListOfLocations() {
-	text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Shake to refresh");
-
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, 1);
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
@@ -131,6 +130,14 @@ int main(void) {
 	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	text_layer_set_text(text_layer, "Welcome to Spoon!");
 	layer_add_child(window_layer, text_layer_get_layer(text_layer));
+	
+	if(switchTip) {
+		switchTip = false;
+		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Shake to refresh");
+	} else {
+		switchTip = true;
+		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press venue");
+	}
 
 	if(persist_exists(TOKEN_KEY)) {
 		getListOfLocations();

@@ -68,6 +68,10 @@ static void clean_list() {
 	menu_layer_reload_data_and_mark_dirty(menu_layer);
 }
 
+bool venuelist_is_on_top() {
+	return window == window_stack_get_top_window();
+}
+
 void venuelist_in_received_handler(DictionaryIterator *iter) {
 	Tuple *index_tuple = dict_find(iter, SPOON_INDEX);
 	Tuple *id_tuple = dict_find(iter, SPOON_ID);
@@ -83,27 +87,25 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		}
 	}
 
-	if (index_tuple && name_tuple && address_tuple) {
-		SpoonVenue venue;
-		venue.index = index_tuple->value->int16;
-		strncpy(venue.id, id_tuple->value->cstring, sizeof(venue.id));
-		strncpy(venue.name, name_tuple->value->cstring, sizeof(venue.name));
-		if(address_tuple) {
-			strncpy(venue.address, address_tuple->value->cstring, sizeof(venue.address));
-		} else {
-			strncpy(venue.address, "-", sizeof(venue.address));
+	//if(venuelist_is_on_top) {
+		if (index_tuple && name_tuple && address_tuple) {
+			SpoonVenue venue;
+			venue.index = index_tuple->value->int16;
+			strncpy(venue.id, id_tuple->value->cstring, sizeof(venue.id));
+			strncpy(venue.name, name_tuple->value->cstring, sizeof(venue.name));
+			if(address_tuple) {
+				strncpy(venue.address, address_tuple->value->cstring, sizeof(venue.address));
+			} else {
+				strncpy(venue.address, "-", sizeof(venue.address));
+			}
+			venues[venue.index] = venue;
+			num_venues++;
+			menu_layer_reload_data_and_mark_dirty(menu_layer);
+		} else if (name_tuple) {
+			strncpy(error, name_tuple->value->cstring, sizeof(error));
+			menu_layer_reload_data_and_mark_dirty(menu_layer);
 		}
-		venues[venue.index] = venue;
-		num_venues++;
-		menu_layer_reload_data_and_mark_dirty(menu_layer);
-	} else if (name_tuple) {
-		strncpy(error, name_tuple->value->cstring, sizeof(error));
-		menu_layer_reload_data_and_mark_dirty(menu_layer);
-	}
-}
-
-bool venuelist_is_on_top() {
-	return window == window_stack_get_top_window();
+	//}
 }
 
 static uint16_t menu_get_num_sections_callback(struct MenuLayer *menu_layer, void *callback_context) {

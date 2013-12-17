@@ -59,6 +59,19 @@ function notifyPebbleConnected(token) {
 		);
 }
 
+function notifyPebbleCheckinOutcome(result, message) {
+	var transactionId = Pebble.sendAppMessage( { "result" : result == true ? 1 : 0, "name" : message },
+		function(e) {
+			console.log("Successfully delivered token message with transactionId=" + e.data.transactionId);
+		},
+		function(e) {
+			console.log("Unable to deliver token message with transactionId="
+						+ e.data.transactionId
+						+ " Error is: " + e.error.message);
+			}
+		);
+}
+
 function getClosestVenues() {
 	if (navigator.geolocation) {
 		navigator.geolocation.getCurrentPosition(success, error);
@@ -149,24 +162,26 @@ function sendAppMessage() {
 	}
 }
 
-function attemptCheckin(id) {
+function attemptCheckin(id, name, private) {
 	var userToken = localStorage['foursquare_token'].toString();
 	if(userToken) {
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(function(position) {
 				var req = new XMLHttpRequest();
 				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ", " + position.coords.longitude + "&venueId=" + id;
+				if(private == 1) checkinRequestUrl += '&broadcast=private';
 				req.open('POST', checkinRequestUrl, true);
 				req.onload = function(e) {
 					if (req.readyState == 4) {
 						if (req.status == 200) {
 							if (req.responseText) {
 								var response = JSON.parse(req.responseText);
-								console.log('Response: ' + response.toString());
-								Pebble.showSimpleNotificationOnPebble("Spoon", "Successfully checked in!");
+								console.log('Response: ' + response.toString());								
+								notifyPebbleCheckinOutcome(true, name);
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
-								appMessageQueue.push({'message': {'error': 'Error with request :(' }});
+								notifyPebbleCheckinOutcome(false, "Error with Request");
+								//appMessageQueue.push({'message': {'error': 'Error with request :(' }});
 							}
 						} else {
 							console.log('Request returned error code ' + req.status.toString());
@@ -196,7 +211,7 @@ Pebble.addEventListener("appmessage",
 	function(e) {
 		console.log("Received message: " + e.payload.toString());
 		if (e.payload.id) {
-			attemptCheckin(e.payload.id);
+			attemptCheckin(e.payload.id,e.payload.name,e.payload.private);
 		} else if (e.payload.refresh) {
 			getClosestVenues();
 		}

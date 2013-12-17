@@ -29,7 +29,6 @@ static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *c
 
 static Window *window;
 static MenuLayer *menu_layer;
-static TextLayer *text_layer;
 
 void venuelist_init(void) {
 	window = window_create();
@@ -87,25 +86,23 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		}
 	}
 
-	//if(venuelist_is_on_top) {
-		if (index_tuple && name_tuple && address_tuple) {
-			SpoonVenue venue;
-			venue.index = index_tuple->value->int16;
-			strncpy(venue.id, id_tuple->value->cstring, sizeof(venue.id));
-			strncpy(venue.name, name_tuple->value->cstring, sizeof(venue.name));
-			if(address_tuple) {
-				strncpy(venue.address, address_tuple->value->cstring, sizeof(venue.address));
-			} else {
-				strncpy(venue.address, "-", sizeof(venue.address));
-			}
-			venues[venue.index] = venue;
-			num_venues++;
-			menu_layer_reload_data_and_mark_dirty(menu_layer);
-		} else if (name_tuple) {
-			strncpy(error, name_tuple->value->cstring, sizeof(error));
-			menu_layer_reload_data_and_mark_dirty(menu_layer);
+	if (index_tuple && name_tuple && address_tuple) {
+		SpoonVenue venue;
+		venue.index = index_tuple->value->int16;
+		strncpy(venue.id, id_tuple->value->cstring, sizeof(venue.id));
+		strncpy(venue.name, name_tuple->value->cstring, sizeof(venue.name));
+		if(address_tuple) {
+			strncpy(venue.address, address_tuple->value->cstring, sizeof(venue.address));
+		} else {
+			strncpy(venue.address, "-", sizeof(venue.address));
 		}
-	//}
+		venues[venue.index] = venue;
+		num_venues++;
+		menu_layer_reload_data_and_mark_dirty(menu_layer);
+	} else if (name_tuple) {
+		strncpy(error, name_tuple->value->cstring, sizeof(error));
+		menu_layer_reload_data_and_mark_dirty(menu_layer);
+	}
 }
 
 static uint16_t menu_get_num_sections_callback(struct MenuLayer *menu_layer, void *callback_context) {
@@ -148,5 +145,5 @@ static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *c
 	vibes_double_pulse();
 	strncpy(venueid, venues[cell_index->row].id, sizeof(venueid));
 	strncpy(venuename, venues[cell_index->row].name, sizeof(venuename));
-	send_checkin_request_confirmation(venueid, venuename);
+	send_checkin_request_confirmation(venueid, venuename, 0);
 }

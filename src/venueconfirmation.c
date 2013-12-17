@@ -13,11 +13,13 @@ static TextLayer *text_layer_prompt;
 static TextLayer *text_layer_name;
 static ActionBarLayer* actionBar;
 static GBitmap* buttonCheck;
+static GBitmap* buttonPrivate;
 
-void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512]) {
+void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512], int private) {
 	if(venue_guid) {
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
 		Tuplet name_tuple = TupletCString(SPOON_NAME, venue_name);
+		Tuplet private_tuple = TupletInteger(SPOON_PRIVATE, private);
 		
 		DictionaryIterator *iter;
 		app_message_outbox_begin(&iter);
@@ -28,6 +30,7 @@ void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512
 		
 		dict_write_tuplet(iter, &guid_tuple);
 		dict_write_tuplet(iter, &name_tuple);
+		dict_write_tuplet(iter, &private_tuple);
 		dict_write_end(iter);
 		
 		app_message_outbox_send();
@@ -38,12 +41,19 @@ void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512
 
 void down_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
 	vibes_double_pulse();
-	send_checkin_request_confirmation(venueid, venuename);
+	send_checkin_request_confirmation(venueid, venuename, 0);
+	window_stack_pop(true);
+}
+
+void up_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
+	vibes_double_pulse();
+	send_checkin_request_confirmation(venueid, venuename, 1);
 	window_stack_pop(true);
 }
 
 void click_config_confirmation(void *context) {
 	window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) down_single_click_handler_confirmation);
+	window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) up_single_click_handler_confirmation);
 }
 
 void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
@@ -73,6 +83,8 @@ void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
 	action_bar_layer_set_click_config_provider(actionBar, (ClickConfigProvider) click_config_confirmation);
 	buttonCheck = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_OK);
 	action_bar_layer_set_icon(actionBar, BUTTON_ID_DOWN, buttonCheck);
+	buttonPrivate = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_PRIVATE);
+	action_bar_layer_set_icon(actionBar, BUTTON_ID_UP, buttonPrivate);
 	action_bar_layer_add_to_window(actionBar, window);
 }
 

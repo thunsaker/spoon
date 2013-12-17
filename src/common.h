@@ -16,9 +16,7 @@ enum {
 	SPOON_ID = 0x3,
 	SPOON_NAME = 0x4,
 	SPOON_ADDRESS = 0x5,
-	SPOON_REFRESH = 0x6
-};
-
-enum {
-	TOKEN_KEY = 0x0
+	SPOON_REFRESH = 0x6,
+	SPOON_RESULT = 0x7,
+	SPOON_PRIVATE = 0x8
 };

@@ -1,17 +1,19 @@
 {
-    "versionLabel": "1.1",
+    "versionLabel": "1.2",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "appKeys": {
         "index": 2,
         "name": 4,
         "refresh": 6,
+        "private": 8,
         "token": 0,
         "location": 1,
         "address": 5,
-        "id": 3
+        "id": 3,
+        "result": 7
     },
     "longName": "Spoon",
-    "versionCode": 2,
+    "versionCode": 3,
     "capabilities": [
         "location",
         "configurable"
@@ -23,6 +25,26 @@
     },
     "resources": {
         "media": [
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_GRANDE",
+                "file": "images/check_black_big.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_SHARE",
+                "file": "images/share_black.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_PRIVATE",
+                "file": "images/private_black.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_FOURSQUARE_COG",
+                "file": "images/foursquare_cog.png"
+            },
             {
                 "type": "png",
                 "name": "IMAGE_CHECK_OK",

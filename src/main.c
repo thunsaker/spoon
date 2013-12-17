@@ -4,14 +4,18 @@
 #include "venuelist.h"
 #include "pebble-assist.h"
 #include "common.h"
+#include "checkinresult.h"
 	
 #define MAX_VENUES 10
+#define KEY_TOKEN 10
 	
 static Window *window;
 
 static TextLayer *text_layer;
 static BitmapLayer *image_layer;
 static GBitmap *image_spoon;
+static BitmapLayer *image_layer_cog;
+static GBitmap *image_cog;
 static ActionBarLayer *action_bar;
 static SimpleMenuLayer *venue_menu_layer;
 static SimpleMenuSection menu_sections[1];
@@ -43,6 +47,14 @@ void getListOfLocations() {
 	if (iter == NULL) {
 		return;
 	}
+	
+	if(switchTip == true) {
+		switchTip = false;
+		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Shake to refresh");
+	} else {
+		switchTip = true;
+		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press venue");
+	}
 
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
@@ -61,19 +73,22 @@ void enableRefresh() {
 void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_token = dict_find(iter, SPOON_TOKEN);
 	Tuple *text_tuple_latlng = dict_find(iter, SPOON_LOCATION);
+	Tuple *text_tuple_result = dict_find(iter, SPOON_RESULT);
+	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
 
 	if(text_tuple_token && !text_tuple_latlng) {
 		text_layer_set_text(text_layer, "Connected to Foursquare!");
-		persist_write_string(TOKEN_KEY, text_tuple_token->value->cstring);
+		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
 
 		getListOfLocations();
+	} else if(text_tuple_result) {
+		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
 	} else if(!text_tuple_token) {
 		if(!venuelist_is_on_top()) {
 			window_stack_pop_all(true);
 			venuelist_show();
 		}
 		Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
-		Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
 		Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
 
 		enableRefresh();
@@ -108,6 +123,7 @@ static void init(void) {
 	app_message_open(inbound_size, outbound_size);
 	
 	venuelist_init();
+	checkinresult_init();
 }
 
 int main(void) {
@@ -120,26 +136,23 @@ int main(void) {
 	GRect bounds = layer_get_frame(window_layer);
 
 	image_spoon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_APP_LOGO_LONG);
-	image_layer = bitmap_layer_create(GRect(0,10,bounds.size.w, 20));
+	image_layer = bitmap_layer_create(GRect(0,5,bounds.size.w, 20));
 	bitmap_layer_set_bitmap(image_layer, image_spoon);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer));
 
-	text_layer = text_layer_create(GRect(0,30, bounds.size.w, bounds.size.h));
+	text_layer = text_layer_create(GRect(0,25, bounds.size.w, bounds.size.h));
 	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
 	text_layer_set_overflow_mode(text_layer, GTextOverflowModeWordWrap);
 	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	text_layer_set_text(text_layer, "Welcome to Spoon!");
 	layer_add_child(window_layer, text_layer_get_layer(text_layer));
 	
-	if(switchTip) {
-		switchTip = false;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Shake to refresh");
-	} else {
-		switchTip = true;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press venue");
-	}
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG);
+	image_layer_cog = bitmap_layer_create(GRect(64,130,16,16));
+	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
+	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
 
-	if(persist_exists(TOKEN_KEY)) {
+	if(persist_exists(KEY_TOKEN)) {
 		getListOfLocations();
 	} else {
 		text_layer_set_text(text_layer, "Open the Pebble app on your phone and connect to Foursquare.");

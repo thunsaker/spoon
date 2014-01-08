@@ -10,64 +10,63 @@ var venues = {};
 var max_venues = 10;
 var isNewList = false;
 
-Pebble.addEventListener("ready",
+Pebble.addEventListener('ready',
 	function(e) {
-		if(localStorage["foursquare_token"]) {
+		if(localStorage['foursquare_token']) {
 			getClosestVenues();
 		}
 	}
 );
 
-Pebble.addEventListener("showConfiguration", 
+Pebble.addEventListener('showConfiguration', 
 	function(e) {
-		console.log("Showing config...");
+		console.log('Showing config...');
 		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
 		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
 		if(client_id && callback_uri) {
 			Pebble.openURL('http://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri);
 		} else {
-			Pebble.showSimpleNotificationOnPebble("Spoon", "Invalid authorization url, please check client_id and callback_uri variables.");
+			Pebble.showSimpleNotificationOnPebble('Spoon', 'Invalid authorization url, please check client_id and callback_uri variables.');
 		}
 	}
 );
 
-Pebble.addEventListener("webviewclosed",
+Pebble.addEventListener('webviewclosed',
 	function(e) {
 		var configuration = JSON.parse(e.response);
-		console.log("Configuration window returned: ", configuration);
+		//console.log('Configuration window returned: ', configuration);
 		if(configuration['result'] == true) {
-			localStorage["foursquare_token"] = configuration['token'];
+			localStorage['foursquare_token'] = configuration['token'];
 			notifyPebbleConnected(localStorage['foursquare_token'].toString());
 			isNewList = true;
 			getClosestVenues();
 		} else {
-			Pebble.showSimpleNotificationOnPebble("Spoon", ":( Connection Failed. Try Again.");
+			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
 		}
 	}
 );
 
 function notifyPebbleConnected(token) {
-	var transactionId = Pebble.sendAppMessage( { "token" : token },
+	var transactionId = Pebble.sendAppMessage( { 'token' : token },
 		function(e) {
-			console.log("Successfully delivered token message with transactionId=" + e.data.transactionId);
+			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
 		function(e) {
-			console.log("Unable to deliver token message with transactionId="
+			console.log('Unable to deliver token message with transactionId='
 						+ e.data.transactionId
-						+ " Error is: " + e.error.message);
+						+ ' Error is: ' + e.error.message);
 			}
 		);
 }
 
 function notifyPebbleCheckinOutcome(result, message) {
-	var transactionId = Pebble.sendAppMessage( { "result" : result == true ? 1 : 0, "name" : message },
+	var transactionId = Pebble.sendAppMessage( { 'result' : result == true ? 1 : 0, 'name' : message },
 		function(e) {
-			console.log("Successfully delivered token message with transactionId=" + e.data.transactionId);
+			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
 		function(e) {
-			console.log("Unable to deliver token message with transactionId="
-						+ e.data.transactionId
-						+ " Error is: " + e.error.message);
+			console.log('Unable to deliver token message with transactionId=' 
+				+ e.data.transactionId + ' Error is: ' + e.error.message);
 			}
 		);
 }
@@ -85,7 +84,7 @@ var success = function(position) {
 	var userToken = localStorage['foursquare_token'].toString();
 	if(userToken) {
 		var req = new XMLHttpRequest();
-		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ", " + position.coords.longitude + "&limit=" + max_venues;
+		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues;
 		req.open('GET', requestUrl, true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
@@ -96,10 +95,15 @@ var success = function(position) {
 						venues = response.response.venues;
 						venues.forEach(function (element, index, array) {
 							venueId = element.id;
-							venueName = element.name;
-							venueAddress = element.location.address != null ? element.location.address : "none";
+							venueName = element.name.length > 45 ? element.name.substring(0,45) : element.name;
+							venueAddress = element.location.address != null 
+								? element.location.address.length > 20
+									? element.location.address.substring(0,20)
+									: element.location.address
+								: 'none';
 							if(isNewList == true) {
-								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index, 'refresh': true }});
+								//appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index, 'refresh': true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index': index }});
 							} else {
 								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index}});
 							}
@@ -130,8 +134,8 @@ var success = function(position) {
 };
 
 var error = function(e) {
-	Pebble.sendAppMessage({"error": e});
-	Pebble.showSimpleNotificationOnPebble("Spoon", "No location");
+	Pebble.sendAppMessage({'error': e});
+	Pebble.showSimpleNotificationOnPebble('Spoon', 'No location');
 };
 
 function sendAppMessage() {
@@ -139,6 +143,7 @@ function sendAppMessage() {
 		currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
+
 		if (currentAppMessage.numTries < maxAppMessageTries) {
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
@@ -157,7 +162,7 @@ function sendAppMessage() {
 				}
 			);
 		} else {
-			console.log('Failed sending AppMessage for transactionId:' + currentAppMessage.transactionId + '. Error: ' + JSON.stringify(currentAppMessage.message));
+			console.log('Failed sending AppMessage after multiple attempts for transactionId:' + currentAppMessage.transactionId + '. Error: None. Here\'s the message:'  + JSON.stringify(currentAppMessage.message));
 		}
 	}
 }
@@ -168,19 +173,21 @@ function attemptCheckin(id, name, private) {
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(function(position) {
 				var req = new XMLHttpRequest();
-				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ", " + position.coords.longitude + "&venueId=" + id;
-				if(private == 1) checkinRequestUrl += '&broadcast=private';
+				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&venueId=' + id;
+				if(private == 1) {
+					checkinRequestUrl += '&broadcast=private';
+				}
 				req.open('POST', checkinRequestUrl, true);
 				req.onload = function(e) {
 					if (req.readyState == 4) {
 						if (req.status == 200) {
 							if (req.responseText) {
 								var response = JSON.parse(req.responseText);
-								console.log('Response: ' + response.toString());								
+								//console.log('Response: ' + response.toString());
 								notifyPebbleCheckinOutcome(true, name);
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
-								notifyPebbleCheckinOutcome(false, "Error with Request");
+								notifyPebbleCheckinOutcome(false, 'Error with Request');
 								//appMessageQueue.push({'message': {'error': 'Error with request :(' }});
 							}
 						} else {
@@ -207,9 +214,9 @@ function attemptCheckin(id, name, private) {
 	}
 }
 
-Pebble.addEventListener("appmessage",
+Pebble.addEventListener('appmessage',
 	function(e) {
-		console.log("Received message: " + e.payload.toString());
+		//console.log('Received message: ' + e.payload.toString());
 		if (e.payload.id) {
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private);
 		} else if (e.payload.refresh) {

@@ -14,6 +14,7 @@ static TextLayer *text_layer_name;
 static ActionBarLayer* actionBar;
 static GBitmap* buttonCheck;
 static GBitmap* buttonPrivate;
+static GBitmap* buttonShare;
 
 void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512], int private) {
 	if(venue_guid) {
@@ -85,6 +86,8 @@ void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
 	action_bar_layer_set_icon(actionBar, BUTTON_ID_DOWN, buttonCheck);
 	buttonPrivate = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_PRIVATE);
 	action_bar_layer_set_icon(actionBar, BUTTON_ID_UP, buttonPrivate);
+	//buttonShare = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_SHARE);
+	//action_bar_layer_set_icon(actionBar, BUTTON_ID_SELECT, buttonShare);
 	action_bar_layer_add_to_window(actionBar, window);
 }
 

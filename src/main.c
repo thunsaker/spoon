@@ -48,13 +48,23 @@ void getListOfLocations() {
 		return;
 	}
 	
+	/*
 	if(switchTip == true) {
 		switchTip = false;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Shake to refresh");
+		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Double shake to refresh");
 	} else {
 		switchTip = true;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press venue");
-	}
+	*/
+	Layer *window_layer = window_get_root_layer(window);
+	layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
+	
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG);
+	image_layer_cog = bitmap_layer_create(GRect(64,82,16,16));
+	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
+	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
+	
+	text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press for quick check-in.");
+	//}
 
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
@@ -62,8 +72,11 @@ void getListOfLocations() {
 }
 
 void tap_handler(AccelAxisType axis, int32_t direction) {
+	// TODO: Do nothing, thinking about making this a "double-tap" so it doesn't trigger a reload when you try to turn on the backlight.
+	/*
 	vibes_double_pulse();
 	getListOfLocations();
+	*/
 }
 
 void enableRefresh() {
@@ -84,14 +97,14 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	} else if(text_tuple_result) {
 		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
 	} else if(!text_tuple_token) {
+		//APP_LOG(APP_LOG_LEVEL_DEBUG, "venue");
 		if(!venuelist_is_on_top()) {
 			window_stack_pop_all(true);
 			venuelist_show();
 		}
 		Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
 		Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
-
-		enableRefresh();
+		//enableRefresh();
 		if (venuelist_is_on_top()) {
 			venuelist_in_received_handler(iter);
 		} else {
@@ -117,11 +130,13 @@ static void init(void) {
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
-
-	const uint32_t inbound_size = 2048;
-	const uint32_t outbound_size = 64;
+	/*
+	const uint32_t inbound_size = 256;
+	const uint32_t outbound_size = 256;
 	app_message_open(inbound_size, outbound_size);
+	*/
 	
+	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 	venuelist_init();
 	checkinresult_init();
 }

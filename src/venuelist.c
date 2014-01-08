@@ -77,7 +77,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	Tuple *name_tuple = dict_find(iter, SPOON_NAME);
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
 	Tuple *refresh_tuple = dict_find(iter, SPOON_REFRESH);
-	
+
 	if(refresh_tuple) {
 		if(refresh_tuple->value->int16 == 1) {
 			window_stack_pop_all(true);
@@ -96,6 +96,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		} else {
 			strncpy(venue.address, "-", sizeof(venue.address));
 		}
+
 		venues[venue.index] = venue;
 		num_venues++;
 		menu_layer_reload_data_and_mark_dirty(menu_layer);

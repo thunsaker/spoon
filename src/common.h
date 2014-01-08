@@ -4,7 +4,7 @@
 
 typedef struct {
         char id[25];
-        char name[56];
+        char name[128];
         char address[128];
 		int index;
 } SpoonVenue;

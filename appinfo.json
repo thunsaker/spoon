@@ -1,5 +1,5 @@
 {
-    "versionLabel": "1.2",
+    "versionLabel": "1.2.5",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "appKeys": {
         "index": 2,
@@ -12,8 +12,8 @@
         "id": 3,
         "result": 7
     },
-    "longName": "Spoon",
-    "versionCode": 3,
+    "longName": "Spoon 1.2.5",
+    "versionCode": 5,
     "capabilities": [
         "location",
         "configurable"
@@ -25,6 +25,11 @@
     },
     "resources": {
         "media": [
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_MENU",
+                "file": "images/menu_dots.png"
+            },
             {
                 "type": "png",
                 "name": "IMAGE_CHECK_GRANDE",

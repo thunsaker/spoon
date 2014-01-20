@@ -97,7 +97,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	} else if(text_tuple_result) {
 		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
 	} else if(!text_tuple_token) {
-		//APP_LOG(APP_LOG_LEVEL_DEBUG, "venue");
 		if(!venuelist_is_on_top()) {
 			window_stack_pop_all(true);
 			venuelist_show();
@@ -129,13 +128,7 @@ static void init(void) {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
-	app_message_register_outbox_failed(out_failed_handler);
-	/*
-	const uint32_t inbound_size = 256;
-	const uint32_t outbound_size = 256;
-	app_message_open(inbound_size, outbound_size);
-	*/
-	
+	app_message_register_outbox_failed(out_failed_handler);	
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 	venuelist_init();
 	checkinresult_init();
@@ -167,10 +160,14 @@ int main(void) {
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
 
-	if(persist_exists(KEY_TOKEN)) {
-		getListOfLocations();
+	if(bluetooth_connection_service_peek()) {
+		if(persist_exists(KEY_TOKEN)) {
+			getListOfLocations();
+		} else {
+			text_layer_set_text(text_layer, "Connect to Foursquare using the Pebble app on your phone.");
+		}
 	} else {
-		text_layer_set_text(text_layer, "Open the Pebble app on your phone and connect to Foursquare.");
+		text_layer_set_text(text_layer, "Error:\nCannot load venues, no connection to phone.");
 	}
 
 	app_event_loop();

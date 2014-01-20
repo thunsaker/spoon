@@ -1,6 +1,5 @@
 // 2013 Thomas Hunsaker @thunsaker
 
-var maxAppMessageBuffer = 100;
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 3000;
 var appMessageTimeout = 100;
@@ -12,7 +11,7 @@ var isNewList = false;
 
 Pebble.addEventListener('ready',
 	function(e) {
-		if(localStorage['foursquare_token']) {
+		if(localStorage.foursquare_token) {
 			getClosestVenues();
 		}
 	}
@@ -34,10 +33,9 @@ Pebble.addEventListener('showConfiguration',
 Pebble.addEventListener('webviewclosed',
 	function(e) {
 		var configuration = JSON.parse(e.response);
-		//console.log('Configuration window returned: ', configuration);
-		if(configuration['result'] == true) {
-			localStorage['foursquare_token'] = configuration['token'];
-			notifyPebbleConnected(localStorage['foursquare_token'].toString());
+		if(configuration.result == true) {
+			localStorage.foursquare_token = configuration.token;
+			notifyPebbleConnected(localStorage.foursquare_token.toString());
 			isNewList = true;
 			getClosestVenues();
 		} else {
@@ -52,9 +50,7 @@ function notifyPebbleConnected(token) {
 			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
 		function(e) {
-			console.log('Unable to deliver token message with transactionId='
-						+ e.data.transactionId
-						+ ' Error is: ' + e.error.message);
+			console.log('Unable to deliver token message with transactionId=' + e.data.transactionId + ' Error is: ' + e.error.message);
 			}
 		);
 }
@@ -65,23 +61,18 @@ function notifyPebbleCheckinOutcome(result, message) {
 			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
 		function(e) {
-			console.log('Unable to deliver token message with transactionId=' 
-				+ e.data.transactionId + ' Error is: ' + e.error.message);
+			console.log('Unable to deliver token message with transactionId=' + e.data.transactionId + ' Error is: ' + e.error.message);
 			}
 		);
 }
 
-function getClosestVenues() {
-	if (navigator.geolocation) {
-		navigator.geolocation.getCurrentPosition(success, error);
-	} else {
-		console.log('no location support');
-		error('not supported');
-	}		
-}
+var error = function(e) {
+	Pebble.sendAppMessage({'error': e});
+	Pebble.showSimpleNotificationOnPebble('Spoon', 'No location');
+};
 
 var success = function(position) {
-	var userToken = localStorage['foursquare_token'].toString();
+	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {
 		var req = new XMLHttpRequest();
 		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues;
@@ -94,15 +85,14 @@ var success = function(position) {
 						var response = JSON.parse(req.responseText);
 						venues = response.response.venues;
 						venues.forEach(function (element, index, array) {
-							venueId = element.id;
-							venueName = element.name.length > 45 ? element.name.substring(0,45) : element.name;
-							venueAddress = element.location.address != null 
-								? element.location.address.length > 20
-									? element.location.address.substring(0,20)
-									: element.location.address
-								: 'none';
+							var venueId = element.id;
+							var venueName = element.name.length > 45 ? element.name.substring(0,45) : element.name;
+							var venueAddress = element.location.address != null ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
+							if(element.location.distance != null) {
+					   			var venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + "km - " : element.location.distance + "m - ";
+								venueAddress = venueDistance + venueAddress;
+							}
 							if(isNewList == true) {
-								//appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index, 'refresh': true }});
 								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index': index }});
 							} else {
 								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index}});
@@ -117,7 +107,7 @@ var success = function(position) {
 				}
 			}
 			sendAppMessage();
-		}
+		};
 		
 		req.ontimeout = function() {
 			console.log('HTTP request timed out');
@@ -133,14 +123,18 @@ var success = function(position) {
 	}
 };
 
-var error = function(e) {
-	Pebble.sendAppMessage({'error': e});
-	Pebble.showSimpleNotificationOnPebble('Spoon', 'No location');
-};
+function getClosestVenues() {
+	if (navigator.geolocation) {
+		navigator.geolocation.getCurrentPosition(success, error);
+	} else {
+		console.log('no location support');
+		error('not supported');
+	}		
+}
 
 function sendAppMessage() {
 	if (appMessageQueue.length > 0) {
-		currentAppMessage = appMessageQueue[0];
+		var currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
@@ -149,16 +143,12 @@ function sendAppMessage() {
 				currentAppMessage.message,
 				function(e) {
 					appMessageQueue.shift();
-					setTimeout(function() {
-						sendAppMessage();
-					}, appMessageTimeout);
+					setTimeout(function() { sendAppMessage(); }, appMessageTimeout);
 				}, function(e) {
 					console.log('Failed sending AppMessage for transactionId:' + e.data.transactionId + '. Error: ' + e.data.error.message);
 					appMessageQueue[0].transactionId = e.data.transactionId;
 					appMessageQueue[0].numTries++;
-					setTimeout(function() {
-						sendAppMessage();
-					}, appMessageRetryTimeout);
+					setTimeout(function() { sendAppMessage(); }, appMessageRetryTimeout);
 				}
 			);
 		} else {
@@ -168,7 +158,7 @@ function sendAppMessage() {
 }
 
 function attemptCheckin(id, name, private) {
-	var userToken = localStorage['foursquare_token'].toString();
+	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(function(position) {
@@ -184,7 +174,8 @@ function attemptCheckin(id, name, private) {
 							if (req.responseText) {
 								var response = JSON.parse(req.responseText);
 								//console.log('Response: ' + response.toString());
-								notifyPebbleCheckinOutcome(true, name);
+								if(response)
+									notifyPebbleCheckinOutcome(true, name);
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
 								notifyPebbleCheckinOutcome(false, 'Error with Request');
@@ -194,7 +185,7 @@ function attemptCheckin(id, name, private) {
 							console.log('Request returned error code ' + req.status.toString());
 						}
 					}
-				}
+				};
 				req.ontimeout = function() {
 					console.log('HTTP request timed out');
 					appMessageQueue.push({'message': {'error': 'Request timed out!'}});

@@ -1,4 +1,4 @@
-// 2013 Thomas Hunsaker @thunsaker
+// 2014 Thomas Hunsaker @thunsaker
 
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 3000;
@@ -19,7 +19,6 @@ Pebble.addEventListener('ready',
 
 Pebble.addEventListener('showConfiguration', 
 	function(e) {
-		console.log('Showing config...');
 		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
 		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
 		if(client_id && callback_uri) {
@@ -89,7 +88,7 @@ var success = function(position) {
 							var venueName = element.name.length > 45 ? element.name.substring(0,45) : element.name;
 							var venueAddress = element.location.address != null ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
 							if(element.location.distance != null) {
-					   			var venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + "km - " : element.location.distance + "m - ";
+								var venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + "km - " : element.location.distance + "m - ";
 								venueAddress = venueDistance + venueAddress;
 							}
 							if(isNewList == true) {
@@ -100,7 +99,7 @@ var success = function(position) {
 						});
 					} else {
 						console.log('Invalid response received! ' + JSON.stringify(req));
-						appMessageQueue.push({'message': {'error': 'Error with request :(' }});
+						appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
 					}
 				} else {
 					console.log('Request returned error code ' + req.status.toString());
@@ -111,12 +110,12 @@ var success = function(position) {
 		
 		req.ontimeout = function() {
 			console.log('HTTP request timed out');
-			appMessageQueue.push({'message': {'error': 'Request timed out!'}});
+			appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
 			sendAppMessage();
 		};
 		req.onerror = function() {
 			console.log('HTTP request return error');
-			appMessageQueue.push({'message': {'error': 'Failed to connect!'}});
+			appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
 			sendAppMessage();
 		};
 		req.send(null);
@@ -157,16 +156,29 @@ function sendAppMessage() {
 	}
 }
 
-function attemptCheckin(id, name, private) {
+function attemptCheckin(id, name, private, twitter, facebook) {
 	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(function(position) {
 				var req = new XMLHttpRequest();
 				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&venueId=' + id;
+				var broadcastType = '';
 				if(private == 1) {
-					checkinRequestUrl += '&broadcast=private';
+					broadcastType = 'private';
+				} else {
+					if(twitter == 1) {
+						broadcastType = 'twitter';
+					}
+					if(facebook == 1) {
+						broadcastType += (broadcastType.length > 0 ? ',' : '') + 'facebook';
+					}
 				}
+					
+				if(broadcastType.length > 0) {
+					checkinRequestUrl += '&broadcast=' + broadcastType;
+				}
+				
 				req.open('POST', checkinRequestUrl, true);
 				req.onload = function(e) {
 					if (req.readyState == 4) {
@@ -178,7 +190,7 @@ function attemptCheckin(id, name, private) {
 									notifyPebbleCheckinOutcome(true, name);
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
-								notifyPebbleCheckinOutcome(false, 'Error with Request');
+								notifyPebbleCheckinOutcome(false, 'Error:\nError with Request');
 								//appMessageQueue.push({'message': {'error': 'Error with request :(' }});
 							}
 						} else {
@@ -188,12 +200,12 @@ function attemptCheckin(id, name, private) {
 				};
 				req.ontimeout = function() {
 					console.log('HTTP request timed out');
-					appMessageQueue.push({'message': {'error': 'Request timed out!'}});
+					appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
 					sendAppMessage();
 				};
 				req.onerror = function() {
 					console.log('HTTP request return error');
-					appMessageQueue.push({'message': {'error': 'Failed to connect!'}});
+					appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
 					sendAppMessage();
 				};
 				req.send(null);
@@ -209,7 +221,7 @@ Pebble.addEventListener('appmessage',
 	function(e) {
 		//console.log('Received message: ' + e.payload.toString());
 		if (e.payload.id) {
-			attemptCheckin(e.payload.id,e.payload.name,e.payload.private);
+			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
 		} else if (e.payload.refresh) {
 			getClosestVenues();
 		}

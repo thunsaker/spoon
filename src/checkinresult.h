@@ -1,3 +1,5 @@
+// 2014 Thomas Hunsaker @thunsaker
+
 #pragma once
 	
 void checkinresult_init(void);

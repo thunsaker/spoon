@@ -6,6 +6,7 @@
 #include "pebble-assist.h"
 #include "common.h"
 #include "venueconfirmation.h"
+#include "checkin.h"
 
 #define MAX_VENUES 10
 
@@ -146,5 +147,5 @@ static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *c
 	vibes_double_pulse();
 	strncpy(venueid, venues[cell_index->row].id, sizeof(venueid));
 	strncpy(venuename, venues[cell_index->row].name, sizeof(venuename));
-	send_checkin_request_confirmation(venueid, venuename, 0);
+	send_checkin_request(venueid, venuename, 0, 0, 0);
 }

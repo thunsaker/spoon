@@ -1,9 +1,11 @@
-// 2013 Thomas Hunsaker @thunsaker
+// 2014 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "pebble-assist.h"
 #include "common.h"
 #include "venueconfirmation.h"
+#include "sharemenu.h"
+#include "checkin.h"
 
 static char venueid[128];
 static char venuename[512];
@@ -16,45 +18,28 @@ static GBitmap* buttonCheck;
 static GBitmap* buttonPrivate;
 static GBitmap* buttonShare;
 
-void send_checkin_request_confirmation(char venue_guid[128], char venue_name[512], int private) {
-	if(venue_guid) {
-		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
-		Tuplet name_tuple = TupletCString(SPOON_NAME, venue_name);
-		Tuplet private_tuple = TupletInteger(SPOON_PRIVATE, private);
-		
-		DictionaryIterator *iter;
-		app_message_outbox_begin(&iter);
-		
-		if(iter == NULL) {
-			return;
-		}
-		
-		dict_write_tuplet(iter, &guid_tuple);
-		dict_write_tuplet(iter, &name_tuple);
-		dict_write_tuplet(iter, &private_tuple);
-		dict_write_end(iter);
-		
-		app_message_outbox_send();
-	} else {
-		return;
-	}
-}
-
 void down_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
 	vibes_double_pulse();
-	send_checkin_request_confirmation(venueid, venuename, 0);
+	send_checkin_request(venueid, venuename, 0, 0, 0);
 	window_stack_pop(true);
 }
 
 void up_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
 	vibes_double_pulse();
-	send_checkin_request_confirmation(venueid, venuename, 1);
+	send_checkin_request(venueid, venuename, 1, 0, 0);
 	window_stack_pop(true);
+}
+
+void select_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
+	vibes_short_pulse();
+	window_stack_pop(true);
+	sharemenu_show(venueid, venuename);
 }
 
 void click_config_confirmation(void *context) {
 	window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) down_single_click_handler_confirmation);
 	window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) up_single_click_handler_confirmation);
+	window_single_click_subscribe(BUTTON_ID_SELECT, (ClickHandler) select_single_click_handler_confirmation);
 }
 
 void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
@@ -86,8 +71,8 @@ void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
 	action_bar_layer_set_icon(actionBar, BUTTON_ID_DOWN, buttonCheck);
 	buttonPrivate = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_PRIVATE);
 	action_bar_layer_set_icon(actionBar, BUTTON_ID_UP, buttonPrivate);
-	//buttonShare = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_SHARE);
-	//action_bar_layer_set_icon(actionBar, BUTTON_ID_SELECT, buttonShare);
+	buttonShare = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_SHARE);
+	action_bar_layer_set_icon(actionBar, BUTTON_ID_SELECT, buttonShare);
 	action_bar_layer_add_to_window(actionBar, window);
 }
 

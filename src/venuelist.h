@@ -1,4 +1,4 @@
-// 2013 Thomas Hunsaker @thunsaker
+// 2014 Thomas Hunsaker @thunsaker
 // Heavily modified version of Neal's Hacker News list implementation - https://github.com/Neal/pebble-hackernews
 
 #pragma once

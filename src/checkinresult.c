@@ -28,6 +28,7 @@ void checkinresult_init(void){
 
 void checkinresult_show(int result, char venue_name[512]){
 	window_stack_push(window, true);
+	vibes_short_pulse();
 	if(result == 1) {		
 		static char checkin_result_text[512];
 		snprintf(checkin_result_text, sizeof(checkin_result_text), "Successfully checked into %s", venue_name);

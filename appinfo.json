@@ -1,18 +1,21 @@
 {
-    "versionLabel": "1.4",
+    "versionLabel": "1.5",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "appKeys": {
         "index": 2,
         "name": 4,
+        "twitter": 9,
+        "error": 11,
         "refresh": 6,
         "private": 8,
         "token": 0,
+        "facebook": 10,
         "location": 1,
         "address": 5,
         "id": 3,
         "result": 7
     },
-    "longName": "Spoon 1.4",
+    "longName": "Spoon 1.5",
     "versionCode": 6,
     "capabilities": [
         "location",
@@ -25,6 +28,26 @@
     },
     "resources": {
         "media": [
+            {
+                "type": "png",
+                "name": "IMAGE_SHARE_FACEBOOK",
+                "file": "images/share_facebook.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_SHARE_TWITTER",
+                "file": "images/share_twitter.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_OFF",
+                "file": "images/checkbox_off.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_ON",
+                "file": "images/checkbox_on.png"
+            },
             {
                 "menuIcon": true,
                 "type": "png",

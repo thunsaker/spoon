@@ -1,3 +1,5 @@
+// 2014 Thomas Hunsaker @thunsaker
+
 #include <pebble.h>
 #include "checkinresult.h"
 	
@@ -29,7 +31,8 @@ void checkinresult_init(void){
 void checkinresult_show(int result, char venue_name[512]){
 	window_stack_push(window, true);
 	vibes_short_pulse();
-	if(result == 1) {		
+	if(result == 1) {
+		// Add facebook/twitter sharing notification
 		static char checkin_result_text[512];
 		snprintf(checkin_result_text, sizeof(checkin_result_text), "Successfully checked into %s", venue_name);
 		text_layer_set_text(text_layer, checkin_result_text);

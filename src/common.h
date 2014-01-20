@@ -1,4 +1,4 @@
-// 2013 Thomas Hunsaker @thunsaker
+// 2014 Thomas Hunsaker @thunsaker
 
 #pragma once
 
@@ -18,5 +18,8 @@ enum {
 	SPOON_ADDRESS = 0x5,
 	SPOON_REFRESH = 0x6,
 	SPOON_RESULT = 0x7,
-	SPOON_PRIVATE = 0x8
+	SPOON_PRIVATE = 0x8,
+	SPOON_TWITTER = 0x9,
+	SPOON_FACEBOOK = 0xA,
+	SPOON_ERROR = 0xB
 };

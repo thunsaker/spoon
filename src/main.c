@@ -1,4 +1,4 @@
-// 2013 Thomas Hunsaker @thunsaker
+// 2014 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "venuelist.h"
@@ -16,10 +16,6 @@ static BitmapLayer *image_layer;
 static GBitmap *image_spoon;
 static BitmapLayer *image_layer_cog;
 static GBitmap *image_cog;
-static ActionBarLayer *action_bar;
-static SimpleMenuLayer *venue_menu_layer;
-static SimpleMenuSection menu_sections[1];
-static SimpleMenuItem menu_items[MAX_VENUES];
 static bool switchTip = true;
 
 static void image_layer_update_callback(Layer *layer, GContext *ctx) {
@@ -47,14 +43,7 @@ void getListOfLocations() {
 	if (iter == NULL) {
 		return;
 	}
-	
-	/*
-	if(switchTip == true) {
-		switchTip = false;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Double shake to refresh");
-	} else {
-		switchTip = true;
-	*/
+
 	Layer *window_layer = window_get_root_layer(window);
 	layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
 	
@@ -62,7 +51,14 @@ void getListOfLocations() {
 	image_layer_cog = bitmap_layer_create(GRect(64,82,16,16));
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
-	
+
+	/*
+	if(switchTip == true) {
+		switchTip = false;
+		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Double shake to refresh");
+	} else {
+		switchTip = true;
+	*/
 	text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press for quick check-in.");
 	//}
 
@@ -88,8 +84,11 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_latlng = dict_find(iter, SPOON_LOCATION);
 	Tuple *text_tuple_result = dict_find(iter, SPOON_RESULT);
 	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
+	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
 
-	if(text_tuple_token && !text_tuple_latlng) {
+	if(text_tuple_error) {
+		text_layer_set_text(text_layer, text_tuple_error->value->cstring);
+	} else if(text_tuple_token && !text_tuple_latlng) {
 		text_layer_set_text(text_layer, "Connected to Foursquare!");
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
 
@@ -101,8 +100,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			window_stack_pop_all(true);
 			venuelist_show();
 		}
-		Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
-		Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
 		//enableRefresh();
 		if (venuelist_is_on_top()) {
 			venuelist_in_received_handler(iter);

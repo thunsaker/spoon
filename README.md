@@ -13,3 +13,7 @@ This app was created with the help of many other Pebble developers:
 [QuickTapPlus](https://github.com/grep-awesome/QuickTapPlus) from [grep-awesome](https://github.com/grep-awesome)
 
 ![Build Status](https://cloudpebble.net/ide/project/17045/status.png)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/thunsaker/spoon/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+

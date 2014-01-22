@@ -1,4 +1,5 @@
 // 2014 Thomas Hunsaker @thunsaker
+// Added comment on my phone.
 
 #include <pebble.h>
 #include "common.h"

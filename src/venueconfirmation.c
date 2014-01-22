@@ -50,7 +50,6 @@ void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
 	window_stack_push(window, true);
 	Layer* window_layer = window_get_root_layer(window);
 	
-	GRect bounds = layer_get_frame(window_layer);
 	text_layer_prompt = text_layer_create(GRect(5,5, 144 - 30, 40));
 	text_layer_set_text_alignment(text_layer_prompt, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(text_layer_prompt, GTextOverflowModeWordWrap);

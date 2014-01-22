@@ -164,7 +164,8 @@ int main(void) {
 			text_layer_set_text(text_layer, "Connect to Foursquare using the Pebble app on your phone.");
 		}
 	} else {
-		text_layer_set_text(text_layer, "Error:\nCannot load venues, no connection to phone.");
+		text_layer_set_text(text_layer, "Error:\nCan't load venues, no connection to phone.");
+		layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
 	}
 
 	app_event_loop();

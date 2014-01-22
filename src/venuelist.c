@@ -13,7 +13,6 @@
 static SpoonVenue venues[MAX_VENUES];
 
 static int num_venues;
-static char address[512];
 static char error[128];
 static char venueid[128];
 static char venuename[512];

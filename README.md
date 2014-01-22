@@ -3,7 +3,7 @@ spoon
 
 Spoon is a simple [Foursquare](http://foursquare.com) check-in app for Pebble. The watchapp lists nearby venues using your phone's location. Pick a venue and check-in. All from your wrist.
 
-[![Download on the Pebble App Store](http://dev.pblweb.com/badge/52b2088505c0467ea900004f/orange/medium/)](https://dev-portal.getpebble.com/applications/52b2088505c0467ea900004f)
+[![Download on the Pebble App Store](http://dev.pblweb.com/badge/52b2088505c0467ea900004f/orange/medium/)](pebble://appstore/52b2088505c0467ea900004f)
 
 or download: http://www.mypebblefaces.com/apps/10947/8172/
 

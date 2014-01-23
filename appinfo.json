@@ -1,5 +1,5 @@
 {
-    "versionLabel": "1.5.1",
+    "versionLabel": "1.5.2",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "appKeys": {
         "index": 2,
@@ -15,7 +15,7 @@
         "id": 3,
         "result": 7
     },
-    "longName": "Spoon 1.5.1",
+    "longName": "Spoon 1.5.2",
     "versionCode": 6,
     "capabilities": [
         "location",

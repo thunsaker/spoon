@@ -7,7 +7,23 @@ static Window *window;
 static TextLayer *text_layer;
 static BitmapLayer *image_layer_check;
 static GBitmap *image_check_big;
-	
+static AppTimer *timer_auto_close = NULL;
+
+void single_click_handler(ClickRecognizerRef recognizer, Window *window) {
+	app_timer_cancel(timer_auto_close);
+	window_stack_pop(true);
+}
+
+void click_config_result(void *context) {
+	window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) single_click_handler);
+	window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) single_click_handler);
+	window_single_click_subscribe(BUTTON_ID_SELECT, (ClickHandler) single_click_handler);
+}
+
+void timer_auto_close_callback(void* data) {
+	window_stack_pop_all(true);
+}
+
 void checkinresult_init(void){
 	window = window_create();
 	
@@ -26,6 +42,7 @@ void checkinresult_init(void){
 	text_layer_set_overflow_mode(text_layer, GTextOverflowModeWordWrap);
 	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	layer_add_child(window_layer, text_layer_get_layer(text_layer));
+	window_set_click_config_provider(window, click_config_result);
 }
 
 void checkinresult_show(int result, char venue_name[512]){
@@ -36,6 +53,8 @@ void checkinresult_show(int result, char venue_name[512]){
 		static char checkin_result_text[512];
 		snprintf(checkin_result_text, sizeof(checkin_result_text), "Successfully checked into %s", venue_name);
 		text_layer_set_text(text_layer, checkin_result_text);
+		
+		timer_auto_close = app_timer_register(10000, timer_auto_close_callback, NULL);
 	} else {
 		text_layer_set_text(text_layer, "There was a problem. :( Please try again.");
 	}

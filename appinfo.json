@@ -30,23 +30,38 @@
         "media": [
             {
                 "type": "png",
-                "name": "IMAGE_SHARE_FACEBOOK",
-                "file": "images/share_facebook.png"
+                "name": "IMAGE_CHECK_MENU",
+                "file": "images/menu_dots.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_SHARE_TWITTER",
-                "file": "images/share_twitter.png"
+                "name": "IMAGE_CHECK_GRANDE",
+                "file": "images/check_black_big.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_CHECK_OFF",
-                "file": "images/checkbox_off.png"
+                "name": "IMAGE_CHECK_SHARE",
+                "file": "images/share_black.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_CHECK_ON",
-                "file": "images/checkbox_on.png"
+                "name": "IMAGE_CHECK_PRIVATE",
+                "file": "images/private_black.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_FOURSQUARE_COG",
+                "file": "images/foursquare_cog.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_CHECK_OK",
+                "file": "images/check_black.png"
+            },
+            {
+                "type": "png",
+                "name": "IMAGE_APP_LOGO_LONG",
+                "file": "images/spoon_long_med.png"
             },
             {
                 "menuIcon": true,
@@ -56,38 +71,23 @@
             },
             {
                 "type": "png",
-                "name": "IMAGE_APP_LOGO_LONG",
-                "file": "images/spoon_long_med.png"
+                "name": "IMAGE_CHECK_ON",
+                "file": "images/checkbox_on.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_CHECK_OK",
-                "file": "images/check_black.png"
+                "name": "IMAGE_CHECK_OFF",
+                "file": "images/checkbox_off.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_FOURSQUARE_COG",
-                "file": "images/foursquare_cog.png"
+                "name": "IMAGE_SHARE_TWITTER",
+                "file": "images/share_twitter.png"
             },
             {
                 "type": "png",
-                "name": "IMAGE_CHECK_PRIVATE",
-                "file": "images/private_black.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_CHECK_SHARE",
-                "file": "images/share_black.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_CHECK_GRANDE",
-                "file": "images/check_black_big.png"
-            },
-            {
-                "type": "png",
-                "name": "IMAGE_CHECK_MENU",
-                "file": "images/menu_dots.png"
+                "name": "IMAGE_SHARE_FACEBOOK",
+                "file": "images/share_facebook.png"
             }
         ]
     }

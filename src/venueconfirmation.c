@@ -31,7 +31,6 @@ void up_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window 
 }
 
 void select_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
-	vibes_short_pulse();
 	window_stack_pop(true);
 	sharemenu_show(venueid, venuename);
 }

@@ -7,7 +7,7 @@
 void send_checkin_request(char venue_guid[128], char venue_name[512], int private, int twitter, int facebook) {
 	if(venue_guid) {
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
-		Tuplet name_tuple = TupletCString(SPOON_NAME, venue_name);
+		Tuplet name_tuple = TupletCString(SPOON_NAME,  venue_name);
 		Tuplet private_tuple = TupletInteger(SPOON_PRIVATE, private);
 		Tuplet twitter_tuple = TupletInteger(SPOON_TWITTER, twitter);
 		Tuplet facebook_tuple = TupletInteger(SPOON_FACEBOOK, facebook);

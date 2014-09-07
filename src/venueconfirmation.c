@@ -6,6 +6,7 @@
 #include "venueconfirmation.h"
 #include "sharemenu.h"
 #include "checkin.h"
+#include "strap/strap.h"
 
 static char venueid[128];
 static char venuename[512];
@@ -19,18 +20,21 @@ static GBitmap* buttonPrivate;
 static GBitmap* buttonShare;
 
 void down_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
+	strap_log_event("/checkin-public"); 
 	vibes_double_pulse();
 	send_checkin_request(venueid, venuename, 0, 0, 0);
 	window_stack_pop(true);
 }
 
 void up_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
+	strap_log_event("/checkin-private"); 
 	vibes_double_pulse();
 	send_checkin_request(venueid, venuename, 1, 0, 0);
 	window_stack_pop(true);
 }
 
 void select_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
+	strap_log_event("/checkin-social-options"); 
 	window_stack_pop(true);
 	sharemenu_show(venueid, venuename);
 }

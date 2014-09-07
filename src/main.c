@@ -5,6 +5,7 @@
 #include "pebble-assist.h"
 #include "common.h"
 #include "checkinresult.h"
+#include "strap/strap.h"
 	
 #define KEY_TOKEN 10
 	
@@ -145,6 +146,9 @@ static void init(void) {
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 	venuelist_init();
 	checkinresult_init();
+
+	// initialize strap!
+  	strap_init();
 }
 
 int main(void) {

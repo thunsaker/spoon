@@ -7,6 +7,7 @@
 #include "common.h"
 #include "venueconfirmation.h"
 #include "checkin.h"
+#include "strap/strap.h"
 
 #define MAX_VENUES 10
 
@@ -88,6 +89,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	}
 
 	if (index_tuple && name_tuple && address_tuple) {
+		strap_log_event("/list-load"); 
 		SpoonVenue venue;
 		venue.index = index_tuple->value->int16;
 		strncpy(venue.id, id_tuple->value->cstring, sizeof(venue.id));
@@ -102,12 +104,14 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		num_venues++;
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
 	} else if (name_tuple) {
+		strap_log_event("/list-error"); 
 		strncpy(error, name_tuple->value->cstring, sizeof(error));
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
 	}
 	
 	if(last_tuple) {
 		vibes_short_pulse();
+		strap_log_event("/list-full-load"); 
 	}
 }
 
@@ -148,6 +152,7 @@ static void menu_select_callback(struct MenuLayer *menu_layer, MenuIndex *cell_i
 }
 
 static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
+	strap_log_event("/checkin-quick"); 
 	vibes_double_pulse();
 	strncpy(venueid, venues[cell_index->row].id, sizeof(venueid));
 	strncpy(venuename, venues[cell_index->row].name, sizeof(venuename));

@@ -3,11 +3,12 @@
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 3000;
 var appMessageTimeout = 100;
-var httpTimeout = 12000;
 var appMessageQueue = [];
 var venues = {};
 var max_venues = 10;
 var isNewList = false;
+var api_date = '20140905';
+var api_mode = '&m=swarm';
 
 Pebble.addEventListener('ready',
 	function(e) {
@@ -32,7 +33,7 @@ Pebble.addEventListener('showConfiguration',
 Pebble.addEventListener('webviewclosed',
 	function(e) {
 		var configuration = JSON.parse(e.response);
-		if(configuration.result == true) {
+		if(configuration.result) {
 			localStorage.foursquare_token = configuration.token;
 			notifyPebbleConnected(localStorage.foursquare_token.toString());
 			isNewList = true;
@@ -44,18 +45,18 @@ Pebble.addEventListener('webviewclosed',
 );
 
 function notifyPebbleConnected(token) {
-	var transactionId = Pebble.sendAppMessage( { 'token' : token },
+	Pebble.sendAppMessage( { 'token' : token },
 		function(e) {
 			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
 		function(e) {
 			console.log('Unable to deliver token message with transactionId=' + e.data.transactionId + ' Error is: ' + e.error.message);
-			}
-		);
+		}
+	);
 }
 
 function notifyPebbleCheckinOutcome(result, message) {
-	var transactionId = Pebble.sendAppMessage( { 'result' : result == true ? 1 : 0, 'name' : message },
+	Pebble.sendAppMessage( { 'result' : result ? 1 : 0, 'name' : message },
 		function(e) {
 			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
@@ -74,7 +75,7 @@ var success = function(position) {
 	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {
 		var req = new XMLHttpRequest();
-		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues;
+		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + api_mode;
 		req.open('GET', requestUrl, true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
@@ -84,14 +85,14 @@ var success = function(position) {
 						var response = JSON.parse(req.responseText);
 						venues = response.response.venues;
 						venues.forEach(function (element, index, array) {
-							var venueId = element.id;
-							var venueName = element.name.length > 45 ? element.name.substring(0,45) : element.name;
+							var venueId = element.id.replace('\'','');
+							var venueName = element.name.length > 45 ? element.name.substring(0,45).replace('\'','') : element.name.replace('\'','');
 							var venueAddress = element.location.address != null ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
 							if(element.location.distance != null) {
 								var venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + "km - " : element.location.distance + "m - ";
 								venueAddress = venueDistance + venueAddress;
 							}
-							if(isNewList == true) {
+							if(isNewList) {
 								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index': index }});
 							} else {
 								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index}});
@@ -162,7 +163,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(function(position) {
 				var req = new XMLHttpRequest();
-				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=20131111&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&venueId=' + id;
+				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&venueId=' + id + api_mode;
 				var broadcastType = '';
 				if(private == 1) {
 					broadcastType = 'private';
@@ -185,7 +186,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 						if (req.status == 200) {
 							if (req.responseText) {
 								var response = JSON.parse(req.responseText);
-								//console.log('Response: ' + response.toString());
+								console.log('Response: ' + response.toString());
 								if(response)
 									notifyPebbleCheckinOutcome(true, name);
 							} else {
@@ -219,7 +220,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 
 Pebble.addEventListener('appmessage',
 	function(e) {
-		//console.log('Received message: ' + e.payload.toString());
+		console.log('Received message: ' + e.payload.toString());
 		if (e.payload.id) {
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
 		} else if (e.payload.refresh) {

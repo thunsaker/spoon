@@ -77,6 +77,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	Tuple *name_tuple = dict_find(iter, SPOON_NAME);
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
 	Tuple *refresh_tuple = dict_find(iter, SPOON_REFRESH);
+	Tuple *last_tuple = dict_find(iter, SPOON_LAST);
 
 	if(refresh_tuple) {
 		if(refresh_tuple->value->int16 == 1) {
@@ -103,6 +104,10 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	} else if (name_tuple) {
 		strncpy(error, name_tuple->value->cstring, sizeof(error));
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
+	}
+	
+	if(last_tuple) {
+		vibes_short_pulse();
 	}
 }
 

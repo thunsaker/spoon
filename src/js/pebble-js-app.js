@@ -87,15 +87,19 @@ var success = function(position) {
 						venues.forEach(function (element, index, array) {
 							var venueId = element.id.replace('\'','');
 							var venueName = element.name.length > 45 ? element.name.substring(0,45).replace('\'','') : element.name.replace('\'','');
-							var venueAddress = element.location.address != null ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
-							if(element.location.distance != null) {
+							var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
+							if(element.location.distance) {
 								var venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + "km - " : element.location.distance + "m - ";
 								venueAddress = venueDistance + venueAddress;
-							}
+							}							
+						
 							if(isNewList) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index': index }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':index, 'refresh':true }});
+								isNewList = false;
+							} else if(index == venues.length - 1) {
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':index, 'last':true }});
 							} else {
-								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index': index}});
+								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':index}});
 							}
 						});
 					} else {

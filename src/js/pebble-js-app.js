@@ -5,10 +5,12 @@ var appMessageRetryTimeout = 3000;
 var appMessageTimeout = 100;
 var appMessageQueue = [];
 var venues = {};
-var max_venues = 10;
+var max_venues = 20;
+var max_radius = 5000;
 var isNewList = false;
 var api_date = '20140905';
 var api_mode = '&m=swarm';
+var recentCheckinMessage = 'Last Check-in';
 
 Pebble.addEventListener('ready',
 	function(e) {
@@ -73,9 +75,15 @@ var error = function(e) {
 
 var success = function(position) {
 	var userToken = localStorage.foursquare_token.toString();
-	if(userToken) {
-		var req = new XMLHttpRequest();
-		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + api_mode;
+	if(userToken) {	
+		fetchMostRecentCheckin(userToken);
+		fetchClosestVenues(userToken, position);
+	}
+};
+
+function fetchClosestVenues(token, position) {
+	var req = new XMLHttpRequest();
+		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 		req.open('GET', requestUrl, true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
@@ -85,6 +93,7 @@ var success = function(position) {
 						var response = JSON.parse(req.responseText);
 						venues = response.response.venues;
 						venues.forEach(function (element, index, array) {
+							var offsetIndex = index + 1;
 							var venueId = element.id.replace('\'','');
 							var venueName = element.name.length > 45 ? element.name.substring(0,45).replace('\'','') : element.name.replace('\'','');
 							var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
@@ -94,23 +103,27 @@ var success = function(position) {
 							}							
 						
 							if(isNewList) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':index, 'refresh':true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'refresh':true }});
+								sendAppMessage();
 								isNewList = false;
 							} else if(index == venues.length - 1) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':index, 'last':true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'last':true }});
+								sendAppMessage();
 							} else {
-								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':index}});
+								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':offsetIndex}});
+								sendAppMessage();
 							}
 						});
 					} else {
 						console.log('Invalid response received! ' + JSON.stringify(req));
 						appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
+						sendAppMessage();
 					}
 				} else {
 					console.log('Request returned error code ' + req.status.toString());
 				}
 			}
-			sendAppMessage();
+			//sendAppMessage();
 		};
 		
 		req.ontimeout = function() {
@@ -124,8 +137,46 @@ var success = function(position) {
 			sendAppMessage();
 		};
 		req.send(null);
-	}
-};
+}
+
+function fetchMostRecentCheckin(token) {
+	var reqRecent = new XMLHttpRequest();
+	var current_time = Math.round(new Date().getTime() / 1000);
+	var requestUrlRecent = 'https://api.foursquare.com/v2/users/self/checkins?oauth_token=' + token + '&v=' + api_date + '&m=foursquare&beforeTimestamp=' + current_time + '&sort=newestfirst&limit=1';
+	reqRecent.open('GET', requestUrlRecent, true);
+	reqRecent.onload = function(e) {
+		if (reqRecent.readyState == 4) {
+			if (reqRecent.status == 200) {
+				if (reqRecent.responseText) {
+					var response = JSON.parse(reqRecent.responseText);
+					var checkinItems = response.response.checkins.items;
+					checkinItems.forEach(function (element, index, array) {
+						var venueId = element.venue.id.replace('\'','');
+						var venueName = element.venue.name.length > 45 ? 
+							element.venue.name.substring(0,45).replace('\'','') 
+						: element.venue.name.replace('\'','');
+						// TODO: Consider adding the date of last checkin (not sure there's enough room on the UI...)
+						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address': recentCheckinMessage, 'index':0, 'recent':true}});
+					});
+				} else {
+					appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
+				}
+			}
+		}
+		sendAppMessage();
+	};
+	reqRecent.ontimeout = function() {
+		console.log('HTTP request timed out');
+		appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
+		sendAppMessage();
+	};
+	reqRecent.onerror = function() {
+		console.log('HTTP request return error');
+		appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
+		sendAppMessage();
+	};
+	reqRecent.send(null);
+}
 
 function getClosestVenues() {
 	if (navigator.geolocation) {

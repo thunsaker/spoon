@@ -7,6 +7,7 @@ typedef struct {
         char name[128];
         char address[128];
 		int index;
+		bool isRecent;
 } SpoonVenue;
 
 enum {
@@ -22,5 +23,6 @@ enum {
 	SPOON_TWITTER = 0x9,
 	SPOON_FACEBOOK = 0xA,
 	SPOON_ERROR = 0xB,
-	SPOON_LAST = 0xC
+	SPOON_LAST = 0xC,
+	SPOON_RECENT = 0xD
 };

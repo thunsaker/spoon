@@ -8,7 +8,7 @@
 #include "venueconfirmation.h"
 #include "checkin.h"
 
-#define MAX_VENUES 10
+#define MAX_VENUES 21
 
 static SpoonVenue venues[MAX_VENUES];
 
@@ -30,6 +30,8 @@ static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *c
 static Window *window;
 static MenuLayer *menu_layer;
 
+static GBitmap *image_check;
+
 void venuelist_init(void) {
 	window = window_create();
 
@@ -46,6 +48,8 @@ void venuelist_init(void) {
 	});
 	menu_layer_set_click_config_onto_window(menu_layer, window);
 	menu_layer_add_to_window(menu_layer, window);
+	
+	image_check = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_OK);
 }
 
 void venuelist_show() {
@@ -78,6 +82,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
 	Tuple *refresh_tuple = dict_find(iter, SPOON_REFRESH);
 	Tuple *last_tuple = dict_find(iter, SPOON_LAST);
+	Tuple *recent_tuple = dict_find(iter, SPOON_RECENT);
 
 	if(refresh_tuple) {
 		if(refresh_tuple->value->int16 == 1) {
@@ -96,6 +101,12 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 			strncpy(venue.address, address_tuple->value->cstring, sizeof(venue.address));
 		} else {
 			strncpy(venue.address, "-", sizeof(venue.address));
+		}
+		
+		if(recent_tuple) {
+			venue.isRecent = true;
+		} else {
+			venue.isRecent = false;
 		}
 
 		venues[venue.index] = venue;
@@ -136,6 +147,8 @@ static void menu_draw_row_callback(GContext *ctx, const Layer *cell_layer, MenuI
 		menu_cell_basic_draw(ctx, cell_layer, "Error!", error, NULL);
 	} else if (num_venues == 0) {
 		menu_cell_basic_draw(ctx, cell_layer, "Loading...", NULL, NULL);
+	} else if (venues[cell_index->row].isRecent == true) {
+		menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, image_check);
 	} else {
 		menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
 	}

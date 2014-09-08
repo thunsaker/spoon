@@ -14,7 +14,7 @@ before_install:
    - cd ~/pebble-dev
 
    # Extract the SDK
-   - tar -zxf ~/PebbleSDK.tar.gz
+   - tar -zxf ~/PebbleSDK-2.4.1.tar.gz
    - cd ~/pebble-dev/$PebbleSDK-2.4.1
 
    # Extract the toolchain

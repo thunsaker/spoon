@@ -1,7 +1,7 @@
 // 2014 Thomas Hunsaker @thunsaker
 
-var maxAppMessageTries = 3;
-var appMessageRetryTimeout = 3000;
+var maxAppMessageTries = 5;
+var appMessageRetryTimeout = 5000;
 var appMessageTimeout = 100;
 var appMessageQueue = [];
 var venues = {};
@@ -64,8 +64,7 @@ function notifyPebbleCheckinOutcome(result, message) {
 		},
 		function(e) {
 			console.log('Unable to deliver token message with transactionId=' + e.data.transactionId + ' Error is: ' + e.error.message);
-			}
-		);
+		});
 }
 
 var error = function(e) {
@@ -104,26 +103,25 @@ function fetchClosestVenues(token, position) {
 						
 							if(isNewList) {
 								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'refresh':true }});
-								sendAppMessage();
 								isNewList = false;
 							} else if(index == venues.length - 1) {
 								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'last':true }});
-								sendAppMessage();
 							} else {
 								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':offsetIndex}});
-								sendAppMessage();
 							}
+							
+							if(index % 5 == 1)
+								sendAppMessage();
 						});
 					} else {
 						console.log('Invalid response received! ' + JSON.stringify(req));
 						appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
-						sendAppMessage();
 					}
 				} else {
 					console.log('Request returned error code ' + req.status.toString());
 				}
 			}
-			//sendAppMessage();
+			sendAppMessage();
 		};
 		
 		req.ontimeout = function() {

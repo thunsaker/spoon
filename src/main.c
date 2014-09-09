@@ -16,7 +16,6 @@ static BitmapLayer *image_layer;
 static GBitmap *image_spoon;
 static BitmapLayer *image_layer_cog;
 static GBitmap *image_cog;
-static bool switchTip = true;
 
 static void image_layer_update_callback(Layer *layer, GContext *ctx) {
 	graphics_draw_bitmap_in_rect(ctx, image_spoon, layer_get_bounds(layer));
@@ -47,20 +46,12 @@ void getListOfLocations() {
 	Layer *window_layer = window_get_root_layer(window);
 	layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
 	
-	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG);
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG_0);
 	image_layer_cog = bitmap_layer_create(GRect(64,82,16,16));
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
-
-	/*
-	if(switchTip == true) {
-		switchTip = false;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Double shake to refresh");
-	} else {
-		switchTip = true;
-	*/
+	
 	text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press for quick check-in.");
-	//}
 
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
@@ -152,7 +143,7 @@ int main(void) {
 	text_layer_set_text(text_layer, "Welcome to Spoon!");
 	layer_add_child(window_layer, text_layer_get_layer(text_layer));
 	
-	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG);
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG_0);
 	image_layer_cog = bitmap_layer_create(GRect(64,130,16,16));
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));

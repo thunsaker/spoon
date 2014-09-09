@@ -20,20 +20,10 @@
         "configurable"
     ],
     "companyName": "Thomas Hunsaker",
-    "longName": "Spoon 1.62",
+    "longName": "Spoon 1.63",
     "projectType": "native",
     "resources": {
         "media": [
-            {
-                "file": "images/share_twitter.png",
-                "name": "IMAGE_SHARE_TWITTER",
-                "type": "png"
-            },
-            {
-                "file": "images/share_facebook.png",
-                "name": "IMAGE_SHARE_FACEBOOK",
-                "type": "png"
-            },
             {
                 "file": "images/spoon_pixelated_24x28.png",
                 "menuIcon": true,
@@ -41,33 +31,23 @@
                 "type": "png"
             },
             {
-                "file": "images/check_black_big.png",
-                "name": "IMAGE_CHECK_GRANDE",
+                "file": "images/foursquare_cog_3.png",
+                "name": "IMAGE_FOURSQUARE_COG_3",
                 "type": "png"
             },
             {
-                "file": "images/share_black.png",
-                "name": "IMAGE_CHECK_SHARE",
+                "file": "images/foursquare_cog_2.png",
+                "name": "IMAGE_FOURSQUARE_COG_2",
                 "type": "png"
             },
             {
-                "file": "images/private_black.png",
-                "name": "IMAGE_CHECK_PRIVATE",
+                "file": "images/foursquare_cog_1.png",
+                "name": "IMAGE_FOURSQUARE_COG_1",
                 "type": "png"
             },
             {
-                "file": "images/foursquare_cog.png",
-                "name": "IMAGE_FOURSQUARE_COG",
-                "type": "png"
-            },
-            {
-                "file": "images/check_black.png",
-                "name": "IMAGE_CHECK_OK",
-                "type": "png"
-            },
-            {
-                "file": "images/spoon_long_med.png",
-                "name": "IMAGE_APP_LOGO_LONG",
+                "file": "images/checkbox_off.png",
+                "name": "IMAGE_CHECK_OFF",
                 "type": "png"
             },
             {
@@ -76,8 +56,43 @@
                 "type": "png"
             },
             {
-                "file": "images/checkbox_off.png",
-                "name": "IMAGE_CHECK_OFF",
+                "file": "images/spoon_long_med.png",
+                "name": "IMAGE_APP_LOGO_LONG",
+                "type": "png"
+            },
+            {
+                "file": "images/check_black.png",
+                "name": "IMAGE_CHECK_OK",
+                "type": "png"
+            },
+            {
+                "file": "images/foursquare_cog.png",
+                "name": "IMAGE_FOURSQUARE_COG_0",
+                "type": "png"
+            },
+            {
+                "file": "images/private_black.png",
+                "name": "IMAGE_CHECK_PRIVATE",
+                "type": "png"
+            },
+            {
+                "file": "images/share_black.png",
+                "name": "IMAGE_CHECK_SHARE",
+                "type": "png"
+            },
+            {
+                "file": "images/check_black_big.png",
+                "name": "IMAGE_CHECK_GRANDE",
+                "type": "png"
+            },
+            {
+                "file": "images/share_facebook.png",
+                "name": "IMAGE_SHARE_FACEBOOK",
+                "type": "png"
+            },
+            {
+                "file": "images/share_twitter.png",
+                "name": "IMAGE_SHARE_TWITTER",
                 "type": "png"
             }
         ]
@@ -85,7 +100,7 @@
     "shortName": "Spoon",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "versionCode": 6,
-    "versionLabel": "1.62",
+    "versionLabel": "1.63",
     "watchapp": {
         "watchface": false
     }

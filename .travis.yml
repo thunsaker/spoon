@@ -1,5 +1,7 @@
 language: c
 before_install: 
+   - ls
+
    #!/usr/bin/env bash
    - echo 'Installing Pebble SDK Dependencies...'
    - cd ~ 
@@ -25,6 +27,6 @@ before_install:
    - export PATH=~/pebble-dev/PebbleSDK-2.4.1/bin:$PATH
 script:
    - echo "Building Pebble project..."
-   - cd $PEBBLE_PROJECT_PATH
+   - cd ~/builds/thunsaker/spoon
    - pebble build
 compiler: gcc

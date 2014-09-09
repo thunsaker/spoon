@@ -17,6 +17,8 @@ before_install:
    - tar -zxf ~/PebbleSDK.tar.gz
    - cd ~/pebble-dev/PebbleSDK-2.4.1
 
+   - sudo pip install --upgrade -r requirements.txt
+
    # Extract the toolchain
    - tar -zxf ~/arm-cs-tools-ubuntu-universal.tar.gz
 

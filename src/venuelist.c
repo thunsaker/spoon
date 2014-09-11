@@ -134,7 +134,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	
 	if(last_tuple) {
 		tidy_list();
-		menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignTop, false);
+		menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignCenter, false);
 		vibes_short_pulse();
 	}
 }

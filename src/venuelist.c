@@ -8,7 +8,7 @@
 #include "venueconfirmation.h"
 #include "checkin.h"
 
-#define MAX_VENUES 21
+#define MAX_VENUES 16
 
 static SpoonVenue venues[MAX_VENUES];
 
@@ -71,6 +71,20 @@ static void clean_list() {
 	menu_layer_reload_data_and_mark_dirty(menu_layer);
 }
 
+static void tidy_list() {
+	for(int i=1;i<num_venues;i++) {
+		for(int j=1;j<num_venues;j++) {
+			if(venues[i].index < venues[j].index) {
+				SpoonVenue tempVenue = venues[i];
+				venues[i] = venues[j];
+				venues[j] = tempVenue;
+			}
+		}
+	}
+	
+	menu_layer_reload_data(menu_layer);
+}
+
 bool venuelist_is_on_top() {
 	return window == window_stack_get_top_window();
 }
@@ -108,8 +122,9 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		} else {
 			venue.isRecent = false;
 		}
-
+		
 		venues[venue.index] = venue;
+		
 		num_venues++;
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
 	} else if (name_tuple) {
@@ -118,6 +133,8 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	}
 	
 	if(last_tuple) {
+		tidy_list();
+		menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignTop, false);
 		vibes_short_pulse();
 	}
 }
@@ -131,7 +148,7 @@ static uint16_t menu_get_num_rows_callback(struct MenuLayer *menu_layer, uint16_
 }
 
 static int16_t menu_get_header_height_callback(struct MenuLayer *menu_layer, uint16_t section_index, void *callback_context) {
-	return MENU_CELL_BASIC_HEADER_HEIGHT;
+	return 0;
 }
 
 static int16_t menu_get_cell_height_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {

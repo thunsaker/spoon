@@ -12,6 +12,7 @@
         "recent": 13,
         "refresh": 6,
         "result": 7,
+        "tip": 14,
         "token": 0,
         "twitter": 9
     },
@@ -20,7 +21,7 @@
         "configurable"
     ],
     "companyName": "Thomas Hunsaker",
-    "longName": "Spoon 1.63",
+    "longName": "Spoon 1.65",
     "projectType": "native",
     "resources": {
         "media": [
@@ -100,7 +101,7 @@
     "shortName": "Spoon",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "versionCode": 6,
-    "versionLabel": "1.63",
+    "versionLabel": "1.65",
     "watchapp": {
         "watchface": false
     }

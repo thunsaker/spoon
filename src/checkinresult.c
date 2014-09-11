@@ -37,7 +37,7 @@ void checkinresult_init(void){
 	bitmap_layer_set_bitmap(image_layer_check, image_check_big);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_check));
 
-	text_layer = text_layer_create(GRect(0,52, bounds.size.w, 152-42));
+	text_layer = text_layer_create(GRect(5,52, bounds.size.w - 10, 152-42));
 	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
 	text_layer_set_overflow_mode(text_layer, GTextOverflowModeWordWrap);
 	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
@@ -55,6 +55,21 @@ void checkinresult_show(int result, char venue_name[512]){
 		text_layer_set_text(text_layer, checkin_result_text);
 		
 		timer_auto_close = app_timer_register(10000, timer_auto_close_callback, NULL);
+	} else {
+		text_layer_set_text(text_layer, "There was a problem. :( Please try again.");
+	}
+}
+
+void checkinresulttip_show(int result, char venue_name[512], char venue_tip[1024]) {
+	window_stack_push(window, true);
+	vibes_short_pulse();
+	if(result == 1) {
+		static char checkin_result_text[1024];
+		snprintf(checkin_result_text, sizeof(checkin_result_text), "Popular Tip: %s", venue_tip);
+		text_layer_set_text(text_layer, venue_tip);
+		
+		timer_auto_close = app_timer_register(30000, timer_auto_close_callback, NULL);
+		// TODO: Add animation bar that shrinks every second
 	} else {
 		text_layer_set_text(text_layer, "There was a problem. :( Please try again.");
 	}

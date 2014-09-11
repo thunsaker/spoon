@@ -6,7 +6,6 @@
 #include "common.h"
 #include "checkinresult.h"
 	
-#define MAX_VENUES 10
 #define KEY_TOKEN 10
 	
 static Window *window;
@@ -76,6 +75,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_result = dict_find(iter, SPOON_RESULT);
 	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
 	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
+	Tuple *text_tuple_tip = dict_find(iter, SPOON_TIP);
 
 	if(text_tuple_error) {
 		text_layer_set_text(text_layer, text_tuple_error->value->cstring);
@@ -85,7 +85,11 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 
 		getListOfLocations();
 	} else if(text_tuple_result) {
-		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
+		/*if(text_tuple_tip) {
+			checkinresulttip_show(text_tuple_result->value->int16, text_tuple_name->value->cstring, text_tuple_tip->value->cstring);
+		} else {*/
+			checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
+		//}
 	} else if(!text_tuple_token) {
 		if(!venuelist_is_on_top()) {
 			window_stack_pop_all(true);
@@ -108,8 +112,29 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	}
 }
 
+char *translate_error(AppMessageResult result) {
+  switch (result) {
+    case APP_MSG_OK: return "APP_MSG_OK";
+    case APP_MSG_SEND_TIMEOUT: return "APP_MSG_SEND_TIMEOUT";
+    case APP_MSG_SEND_REJECTED: return "APP_MSG_SEND_REJECTED";
+    case APP_MSG_NOT_CONNECTED: return "APP_MSG_NOT_CONNECTED";
+    case APP_MSG_APP_NOT_RUNNING: return "APP_MSG_APP_NOT_RUNNING";
+    case APP_MSG_INVALID_ARGS: return "APP_MSG_INVALID_ARGS";
+    case APP_MSG_BUSY: return "APP_MSG_BUSY";
+    case APP_MSG_BUFFER_OVERFLOW: return "APP_MSG_BUFFER_OVERFLOW";
+    case APP_MSG_ALREADY_RELEASED: return "APP_MSG_ALREADY_RELEASED";
+    case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "APP_MSG_CALLBACK_ALREADY_REGISTERED";
+    case APP_MSG_CALLBACK_NOT_REGISTERED: return "APP_MSG_CALLBACK_NOT_REGISTERED";
+    case APP_MSG_OUT_OF_MEMORY: return "APP_MSG_OUT_OF_MEMORY";
+    case APP_MSG_CLOSED: return "APP_MSG_CLOSED";
+    case APP_MSG_INTERNAL_ERROR: return "APP_MSG_INTERNAL_ERROR";
+    default: return "UNKNOWN ERROR";
+  }
+}
+
 void in_dropped_handler(AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped!");
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped! - %d", reason);
+   	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
 static void init(void) {

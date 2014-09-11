@@ -8,7 +8,7 @@
 #include "venueconfirmation.h"
 #include "checkin.h"
 
-#define MAX_VENUES 10
+#define MAX_VENUES 16
 
 static SpoonVenue venues[MAX_VENUES];
 
@@ -30,6 +30,8 @@ static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *c
 static Window *window;
 static MenuLayer *menu_layer;
 
+static GBitmap *image_check;
+
 void venuelist_init(void) {
 	window = window_create();
 
@@ -46,6 +48,8 @@ void venuelist_init(void) {
 	});
 	menu_layer_set_click_config_onto_window(menu_layer, window);
 	menu_layer_add_to_window(menu_layer, window);
+	
+	image_check = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHECK_OK);
 }
 
 void venuelist_show() {
@@ -67,6 +71,20 @@ static void clean_list() {
 	menu_layer_reload_data_and_mark_dirty(menu_layer);
 }
 
+static void tidy_list() {
+	for(int i=1;i<num_venues;i++) {
+		for(int j=1;j<num_venues;j++) {
+			if(venues[i].index < venues[j].index) {
+				SpoonVenue tempVenue = venues[i];
+				venues[i] = venues[j];
+				venues[j] = tempVenue;
+			}
+		}
+	}
+	
+	menu_layer_reload_data(menu_layer);
+}
+
 bool venuelist_is_on_top() {
 	return window == window_stack_get_top_window();
 }
@@ -78,6 +96,7 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
 	Tuple *refresh_tuple = dict_find(iter, SPOON_REFRESH);
 	Tuple *last_tuple = dict_find(iter, SPOON_LAST);
+	Tuple *recent_tuple = dict_find(iter, SPOON_RECENT);
 
 	if(refresh_tuple) {
 		if(refresh_tuple->value->int16 == 1) {
@@ -97,8 +116,15 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		} else {
 			strncpy(venue.address, "-", sizeof(venue.address));
 		}
-
+		
+		if(recent_tuple) {
+			venue.isRecent = true;
+		} else {
+			venue.isRecent = false;
+		}
+		
 		venues[venue.index] = venue;
+		
 		num_venues++;
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
 	} else if (name_tuple) {
@@ -107,6 +133,8 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	}
 	
 	if(last_tuple) {
+		tidy_list();
+		menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignTop, false);
 		vibes_short_pulse();
 	}
 }
@@ -120,7 +148,7 @@ static uint16_t menu_get_num_rows_callback(struct MenuLayer *menu_layer, uint16_
 }
 
 static int16_t menu_get_header_height_callback(struct MenuLayer *menu_layer, uint16_t section_index, void *callback_context) {
-	return MENU_CELL_BASIC_HEADER_HEIGHT;
+	return 0;
 }
 
 static int16_t menu_get_cell_height_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
@@ -136,6 +164,8 @@ static void menu_draw_row_callback(GContext *ctx, const Layer *cell_layer, MenuI
 		menu_cell_basic_draw(ctx, cell_layer, "Error!", error, NULL);
 	} else if (num_venues == 0) {
 		menu_cell_basic_draw(ctx, cell_layer, "Loading...", NULL, NULL);
+	} else if (venues[cell_index->row].isRecent == true) {
+		menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, image_check);
 	} else {
 		menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
 	}

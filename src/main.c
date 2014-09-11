@@ -6,7 +6,6 @@
 #include "common.h"
 #include "checkinresult.h"
 	
-#define MAX_VENUES 10
 #define KEY_TOKEN 10
 	
 static Window *window;
@@ -16,7 +15,6 @@ static BitmapLayer *image_layer;
 static GBitmap *image_spoon;
 static BitmapLayer *image_layer_cog;
 static GBitmap *image_cog;
-static bool switchTip = true;
 
 static void image_layer_update_callback(Layer *layer, GContext *ctx) {
 	graphics_draw_bitmap_in_rect(ctx, image_spoon, layer_get_bounds(layer));
@@ -47,20 +45,12 @@ void getListOfLocations() {
 	Layer *window_layer = window_get_root_layer(window);
 	layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
 	
-	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG);
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG_0);
 	image_layer_cog = bitmap_layer_create(GRect(64,82,16,16));
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
-
-	/*
-	if(switchTip == true) {
-		switchTip = false;
-		text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Double shake to refresh");
-	} else {
-		switchTip = true;
-	*/
+	
 	text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press for quick check-in.");
-	//}
 
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
@@ -85,6 +75,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_result = dict_find(iter, SPOON_RESULT);
 	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
 	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
+	Tuple *text_tuple_tip = dict_find(iter, SPOON_TIP);
 
 	if(text_tuple_error) {
 		text_layer_set_text(text_layer, text_tuple_error->value->cstring);
@@ -94,7 +85,11 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 
 		getListOfLocations();
 	} else if(text_tuple_result) {
-		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
+		/*if(text_tuple_tip) {
+			checkinresulttip_show(text_tuple_result->value->int16, text_tuple_name->value->cstring, text_tuple_tip->value->cstring);
+		} else {*/
+			checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
+		//}
 	} else if(!text_tuple_token) {
 		if(!venuelist_is_on_top()) {
 			window_stack_pop_all(true);
@@ -117,8 +112,29 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	}
 }
 
+char *translate_error(AppMessageResult result) {
+  switch (result) {
+    case APP_MSG_OK: return "APP_MSG_OK";
+    case APP_MSG_SEND_TIMEOUT: return "APP_MSG_SEND_TIMEOUT";
+    case APP_MSG_SEND_REJECTED: return "APP_MSG_SEND_REJECTED";
+    case APP_MSG_NOT_CONNECTED: return "APP_MSG_NOT_CONNECTED";
+    case APP_MSG_APP_NOT_RUNNING: return "APP_MSG_APP_NOT_RUNNING";
+    case APP_MSG_INVALID_ARGS: return "APP_MSG_INVALID_ARGS";
+    case APP_MSG_BUSY: return "APP_MSG_BUSY";
+    case APP_MSG_BUFFER_OVERFLOW: return "APP_MSG_BUFFER_OVERFLOW";
+    case APP_MSG_ALREADY_RELEASED: return "APP_MSG_ALREADY_RELEASED";
+    case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "APP_MSG_CALLBACK_ALREADY_REGISTERED";
+    case APP_MSG_CALLBACK_NOT_REGISTERED: return "APP_MSG_CALLBACK_NOT_REGISTERED";
+    case APP_MSG_OUT_OF_MEMORY: return "APP_MSG_OUT_OF_MEMORY";
+    case APP_MSG_CLOSED: return "APP_MSG_CLOSED";
+    case APP_MSG_INTERNAL_ERROR: return "APP_MSG_INTERNAL_ERROR";
+    default: return "UNKNOWN ERROR";
+  }
+}
+
 void in_dropped_handler(AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped!");
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Dropped! - %d", reason);
+   	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
 static void init(void) {
@@ -152,7 +168,7 @@ int main(void) {
 	text_layer_set_text(text_layer, "Welcome to Spoon!");
 	layer_add_child(window_layer, text_layer_get_layer(text_layer));
 	
-	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG);
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG_0);
 	image_layer_cog = bitmap_layer_create(GRect(64,130,16,16));
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));

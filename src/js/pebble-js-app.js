@@ -1,14 +1,18 @@
 // 2014 Thomas Hunsaker @thunsaker
 
 var maxAppMessageTries = 3;
-var appMessageRetryTimeout = 3000;
-var appMessageTimeout = 100;
+var appMessageRetryTimeout = 1000;
+var appMessageTimeout = 500;
 var appMessageQueue = [];
 var venues = {};
-var max_venues = 10;
+var max_venues = 15;
+var max_radius = 5000;
 var isNewList = false;
 var api_date = '20140905';
 var api_mode = '&m=swarm';
+//var api_mode_foursquare = '&m=foursquare';
+var recentCheckinMessage = 'Last Check-in';
+var sending = false;
 
 Pebble.addEventListener('ready',
 	function(e) {
@@ -45,7 +49,8 @@ Pebble.addEventListener('webviewclosed',
 );
 
 function notifyPebbleConnected(token) {
-	Pebble.sendAppMessage( { 'token' : token },
+	Pebble.sendAppMessage( { 'token' : token });
+	/*
 		function(e) {
 			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
@@ -53,17 +58,22 @@ function notifyPebbleConnected(token) {
 			console.log('Unable to deliver token message with transactionId=' + e.data.transactionId + ' Error is: ' + e.error.message);
 		}
 	);
+	*/
 }
 
-function notifyPebbleCheckinOutcome(result, message) {
-	Pebble.sendAppMessage( { 'result' : result ? 1 : 0, 'name' : message },
+function notifyPebbleCheckinOutcome(result, message, tip) {
+	appMessageQueue.push({'message': { 'result' : result ? 1 : 0, 'name' : message, 'tip' : tip }});
+	sendAppMessage();
+	
+	/*
+	Pebble.sendAppMessage( { 'result' : result ? 1 : 0, 'name' : message, 'tip' : tip },
 		function(e) {
 			console.log('Successfully delivered token message with transactionId=' + e.data.transactionId);
 		},
 		function(e) {
 			console.log('Unable to deliver token message with transactionId=' + e.data.transactionId + ' Error is: ' + e.error.message);
-			}
-		);
+		});
+	*/
 }
 
 var error = function(e) {
@@ -73,9 +83,15 @@ var error = function(e) {
 
 var success = function(position) {
 	var userToken = localStorage.foursquare_token.toString();
-	if(userToken) {
-		var req = new XMLHttpRequest();
-		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + userToken + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + api_mode;
+	if(userToken) {	
+		fetchMostRecentCheckin(userToken);
+		fetchClosestVenues(userToken, position);
+	}
+};
+
+function fetchClosestVenues(token, position) {
+	var req = new XMLHttpRequest();
+		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 		req.open('GET', requestUrl, true);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
@@ -85,22 +101,26 @@ var success = function(position) {
 						var response = JSON.parse(req.responseText);
 						venues = response.response.venues;
 						venues.forEach(function (element, index, array) {
+							var offsetIndex = index + 1;
 							var venueId = element.id.replace('\'','');
-							var venueName = element.name.length > 45 ? element.name.substring(0,45).replace('\'','') : element.name.replace('\'','');
-							var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20) : element.location.address : '(No Address)';
+							var venueName = element.name.length >= 60 ? element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
+							var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20).trim() : element.location.address : '(No Address)';
 							if(element.location.distance) {
 								var venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + "km - " : element.location.distance + "m - ";
 								venueAddress = venueDistance + venueAddress;
 							}							
 						
 							if(isNewList) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':index, 'refresh':true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'refresh':true }});
 								isNewList = false;
 							} else if(index == venues.length - 1) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':index, 'last':true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'last':true }});
 							} else {
-								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':index}});
+								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':offsetIndex}});
 							}
+							
+							if(index % 5 == 1)
+								sendAppMessage();
 						});
 					} else {
 						console.log('Invalid response received! ' + JSON.stringify(req));
@@ -124,8 +144,46 @@ var success = function(position) {
 			sendAppMessage();
 		};
 		req.send(null);
-	}
-};
+}
+
+function fetchMostRecentCheckin(token) {
+	var reqRecent = new XMLHttpRequest();
+	var current_time = Math.round(new Date().getTime() / 1000);
+	var requestUrlRecent = 'https://api.foursquare.com/v2/users/self/checkins?oauth_token=' + token + '&v=' + api_date + '&m=foursquare&beforeTimestamp=' + current_time + '&sort=newestfirst&limit=1';
+	reqRecent.open('GET', requestUrlRecent, true);
+	reqRecent.onload = function(e) {
+		if (reqRecent.readyState == 4) {
+			if (reqRecent.status == 200) {
+				if (reqRecent.responseText) {
+					var response = JSON.parse(reqRecent.responseText);
+					var checkinItems = response.response.checkins.items;
+					checkinItems.forEach(function (element, index, array) {
+						var venueId = element.venue.id.replace('\'','');
+						var venueName = element.venue.name.length > 45 ? 
+							element.venue.name.substring(0,45).replace('\'','') 
+						: element.venue.name.replace('\'','');
+						// TODO: Consider adding the date of last checkin (not sure there's enough room on the UI...)
+						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address': recentCheckinMessage, 'index':0, 'recent':true}});
+					});
+				} else {
+					appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
+				}
+			}
+		}
+		sendAppMessage();
+	};
+	reqRecent.ontimeout = function() {
+		console.log('HTTP request timed out');
+		appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
+		sendAppMessage();
+	};
+	reqRecent.onerror = function() {
+		console.log('HTTP request return error');
+		appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
+		sendAppMessage();
+	};
+	reqRecent.send(null);
+}
 
 function getClosestVenues() {
 	if (navigator.geolocation) {
@@ -137,17 +195,24 @@ function getClosestVenues() {
 }
 
 function sendAppMessage() {
+	if(sending === true)
+		return;
+	else
+		sending = true;
+	
 	if (appMessageQueue.length > 0) {
 		var currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
+			// console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
 					appMessageQueue.shift();
 					setTimeout(function() { sendAppMessage(); }, appMessageTimeout);
+					sending = false;
 				}, function(e) {
 					console.log('Failed sending AppMessage for transactionId:' + e.data.transactionId + '. Error: ' + e.data.error.message);
 					appMessageQueue[0].transactionId = e.data.transactionId;
@@ -157,7 +222,10 @@ function sendAppMessage() {
 			);
 		} else {
 			console.log('Failed sending AppMessage after multiple attempts for transactionId:' + currentAppMessage.transactionId + '. Error: None. Here\'s the message:'  + JSON.stringify(currentAppMessage.message));
+			sending = false;
 		}
+	} else {
+		sending = false;
 	}
 }
 
@@ -190,13 +258,19 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 						if (req.status == 200) {
 							if (req.responseText) {
 								var response = JSON.parse(req.responseText);
-								console.log('Response: ' + response.toString());
-								if(response)
-									notifyPebbleCheckinOutcome(true, name);
+								//console.log('Response: ' + req.responseText);
+								if(response) {
+									// TODO: Maybe show the user a popular tip after checkin?
+									/*
+									if(response.response.checkin.venue.stats.tipCount > 0)
+										attemptFetchVenueTip(userToken, response.response.checkin.venue.id, name);
+									else
+									*/
+									notifyPebbleCheckinOutcome(true, name, '');
+								}
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
-								notifyPebbleCheckinOutcome(false, 'Error:\nError with Request');
-								//appMessageQueue.push({'message': {'error': 'Error with request :(' }});
+								notifyPebbleCheckinOutcome(false, 'Error:\nError with Request', '');
 							}
 						} else {
 							console.log('Request returned error code ' + req.status.toString());
@@ -222,9 +296,39 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 	}
 }
 
+/*
+function attemptFetchVenueTip(token, id, name) {
+	var req = new XMLHttpRequest();
+	var tipsRequestUrl = 'https://api.foursquare.com/v2/venues/' + id + '/tips?oauth_token=' + token + '&v=' + api_date + '&sort=popular&limit=1' + api_mode_foursquare;
+	
+	req.open('GET', tipsRequestUrl, true);
+	req.onload = function(e) {
+		if (req.readyState == 4) {
+			if (req.status == 200) {
+				if (req.responseText) {
+					isNewList = true;
+					var response = JSON.parse(req.responseText);
+					var tip = response.response.tips.items[0].text;
+					if(tip.length > 100)
+						tip = tip.substring(0,100);
+					notifyPebbleCheckinOutcome(true, name, tip);
+				} else {
+					console.log('Invalid response received! ' + JSON.stringify(req));
+					notifyPebbleCheckinOutcome(true, name, '');
+					//appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
+				}
+			} else {
+				console.log('Request returned error code ' + req.status.toString());
+			}
+		}
+		sendAppMessage();
+	};
+}
+*/
+
 Pebble.addEventListener('appmessage',
 	function(e) {
-		console.log('Received message: ' + e.payload.toString());
+		//console.log('Received message: ' + e.payload.toString());
 		if (e.payload.id) {
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
 		} else if (e.payload.refresh) {

@@ -118,8 +118,6 @@ static void app_timer_accl_start(void* data) {
         acclStart = NULL;
     }
 
-
-
     accl_init();
     
     // set timer that will stop reporting accl data after about one minute
@@ -229,7 +227,6 @@ static void send_next_log(void* data) {
         
         log_action(buffer);
     }
-    
 }
 
 static void log_action(void* vpath) {

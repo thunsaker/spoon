@@ -67,8 +67,6 @@ void request_send_acc(void) {
     long long nowz = now;
     nowz = nowz * 1000 + ms;
 
-    
-
 	Tuplet t = TupletStaticCString(KEY_OFFSET + T_TIME_BASE, buffer, strlen(buffer));
 	dict_write_tuplet(iter, &t);
 	Tuplet act = TupletStaticCString(KEY_OFFSET + T_ACTIVITY, cur_activity, strlen(cur_activity));
@@ -92,7 +90,6 @@ void request_send_acc(void) {
 
         Tuplet dv = TupletStaticCString(point + T_DID_VIBRATE, accl_data[i].did_vibrate?"1":"0", 1);
         dict_write_tuplet(iter, &dv);
-
 	}
 	
 	app_message_outbox_send();
@@ -102,7 +99,6 @@ void request_send_acc(void) {
 }
 
 void timer_callback (void *data) {
-	
 	if ((waiting_data) && (msg_run==false))
 		request_send_acc(); 
 	timer = app_timer_register(timer_interval, timer_callback, NULL);
@@ -119,12 +115,11 @@ void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
 			sample_count, acc_count, ack_count, fail_count);
 
 }
-void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
+void accl_out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "App Message Failed to Send(%3d)! error: 0x%02X ",++fail_count,reason);
 	msg_run = false;
-
 }
-void out_received_handler(DictionaryIterator *iterator, void *context) {
+void accl_out_received_handler(DictionaryIterator *iterator, void *context) {
 	//APP_LOG(APP_LOG_LEVEL_INFO, "App Message sent");
 	ack_count++;
 	msg_run = false;
@@ -149,8 +144,8 @@ void accl_init(void) {
 	accel_data_service_subscribe(10, &accel_data_handler);
 	accel_service_set_sampling_rate(sample_freq); //This is the place that works
 	
-	app_message_register_outbox_failed(out_failed_handler);
-	app_message_register_outbox_sent(out_received_handler);
+	app_message_register_outbox_failed(accl_out_failed_handler);
+	app_message_register_outbox_sent(accl_out_received_handler);
 
     timer = app_timer_register(timer_interval, timer_callback, NULL);
 	app_comm_set_sniff_interval(SNIFF_INTERVAL_REDUCED);

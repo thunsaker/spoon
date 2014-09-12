@@ -5,6 +5,7 @@
 #include "pebble-assist.h"
 #include "common.h"
 #include "checkinresult.h"
+#include "strap/strap.h"
 	
 #define KEY_TOKEN 10
 	
@@ -85,11 +86,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 
 		getListOfLocations();
 	} else if(text_tuple_result) {
-		/*if(text_tuple_tip) {
-			checkinresulttip_show(text_tuple_result->value->int16, text_tuple_name->value->cstring, text_tuple_tip->value->cstring);
-		} else {*/
-			checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
-		//}
+		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
 	} else if(!text_tuple_token) {
 		if(!venuelist_is_on_top()) {
 			window_stack_pop_all(true);
@@ -143,8 +140,10 @@ static void init(void) {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);	
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	
 	venuelist_init();
 	checkinresult_init();
+	strap_init(); // initialize strap!
 }
 
 int main(void) {

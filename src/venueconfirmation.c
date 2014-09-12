@@ -6,6 +6,7 @@
 #include "venueconfirmation.h"
 #include "sharemenu.h"
 #include "checkin.h"
+#include "strap/strap.h"
 
 static char venueid[128];
 static char venuename[512];
@@ -22,17 +23,20 @@ void down_single_click_handler_confirmation(ClickRecognizerRef recognizer, Windo
 	vibes_double_pulse();
 	send_checkin_request(venueid, venuename, 0, 0, 0);
 	window_stack_pop(true);
+	strap_log_event("/checkin-public");
 }
 
 void up_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
 	vibes_double_pulse();
 	send_checkin_request(venueid, venuename, 1, 0, 0);
 	window_stack_pop(true);
+	strap_log_event("/checkin-private"); 
 }
 
 void select_single_click_handler_confirmation(ClickRecognizerRef recognizer, Window *window) {
 	window_stack_pop(true);
 	sharemenu_show(venueid, venuename);
+	strap_log_event("/checkin-social-options");
 }
 
 void click_config_confirmation(void *context) {
@@ -56,7 +60,7 @@ void venueconfirmation_show(char venue_guid[128], char venue_name[512]){
 	text_layer_set_text(text_layer_prompt, "Check in?");
 	layer_add_child(window_layer, (Layer *)text_layer_prompt);
 	
-	text_layer_name = text_layer_create(GRect(5,50, 144 - 30, 100));
+	text_layer_name = text_layer_create(GRect(5,50, 144 - 30, 80));
 	text_layer_set_text_alignment(text_layer_name, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(text_layer_name, GTextOverflowModeWordWrap);
 	text_layer_set_font(text_layer_name, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));

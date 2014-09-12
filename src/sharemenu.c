@@ -29,7 +29,6 @@ static bool shareTwitter;
 static bool shareFacebook;
 
 void sharemenu_show(char venue_guid[128], char venue_name[512]) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Inside sharemenu_show");
 	strncpy(venueid, venue_guid, sizeof(venueid));
 	strncpy(venuename, venue_name, sizeof(venuename));
 	

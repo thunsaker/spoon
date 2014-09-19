@@ -91,27 +91,11 @@ bool venuelist_is_on_top() {
 }
 
 void venuelist_in_received_handler(DictionaryIterator *iter) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 94");
-
 	int index = dict_find(iter, SPOON_INDEX)->value->int16;
-
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 98");
-
 	Tuple *id_tuple = dict_find(iter, SPOON_ID);
 	Tuple *name_tuple = dict_find(iter, SPOON_NAME);
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
 	Tuple *recent_tuple = dict_find(iter, SPOON_RECENT);
-
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 105");
-
-	// if(num_venues == 0) {
-	// 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 108");
-		// window_stack_pop_all(true);
-		// venuelist_destroy();
-		// venuelist_show();
-	// }
-
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
 
 	if (name_tuple) {
 		SpoonVenue venue;
@@ -123,32 +107,17 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		} else {
 			strncpy(venue.address, "-", sizeof(venue.address));
 		}
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 126");
 		
 		if(index == 0) {
 			venue.isRecent = true;
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 130");
 		} else {
 			venue.isRecent = false;
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 133");
 		}
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 135");
 		venues[venue.index] = venue;
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 137");
 		num_venues++;
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 139");
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
-		// strap_log_event("/list-load"); 
-	} 
-	// else if (name_tuple) {
-		// strncpy(error, name_tuple->value->cstring, sizeof(error));
-		// menu_layer_reload_data_and_mark_dirty(menu_layer);
-		// strap_log_event("/list-error"); 
-	// }
+	}
 
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Index: %i", index);
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Max_Venues %i", MAX_VENUES - 1);
 	if(index == MAX_VENUES - 1) {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
 		// tidy_list();
@@ -197,9 +166,9 @@ static void menu_select_callback(struct MenuLayer *menu_layer, MenuIndex *cell_i
 }
 
 static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
-	// strap_log_event("/checkin-quick"); 
 	vibes_double_pulse();
 	strncpy(venueid, venues[cell_index->row].id, sizeof(venueid));
 	strncpy(venuename, venues[cell_index->row].name, sizeof(venuename));
 	send_checkin_request(venueid, venuename, 0, 0, 0);
+	strap_log_event("/checkin-quick"); 
 }

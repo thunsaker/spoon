@@ -190,8 +190,7 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-			console.log('Trying to send a message: ' + currentAppMessage.message.name);
-			console.log('Trying to send a message: ' + currentAppMessage.message.address);
+			// console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {

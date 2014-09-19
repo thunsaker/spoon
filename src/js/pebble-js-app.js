@@ -95,12 +95,12 @@ function fetchClosestVenues(token, position) {
 							}							
 						
 							if(isNewList) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'refresh':true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
 								isNewList = false;
 							} else if(index == venues.length - 1) {
-								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress,'index':offsetIndex, 'last':true }});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
 							} else {
-								appMessageQueue.push({'message': {'id': venueId, 'name': venueName, 'address': venueAddress, 'index':offsetIndex}});
+								appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
 							}
 							
 							if(index % 5 == 1)
@@ -147,7 +147,7 @@ function fetchMostRecentCheckin(token) {
 							element.venue.name.substring(0,45).replace('\'','') 
 						: element.venue.name.replace('\'','');
 						// TODO: Consider adding the date of last checkin (not sure there's enough room on the UI...)
-						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address': recentCheckinMessage, 'index':0, 'recent':true}});
+						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':recentCheckinMessage, 'index':0 }});
 					});
 				} else {
 					appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
@@ -190,7 +190,8 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-			// console.log('Trying to send a message: ' + currentAppMessage.message.name);
+			console.log('Trying to send a message: ' + currentAppMessage.message.name);
+			console.log('Trying to send a message: ' + currentAppMessage.message.address);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -276,7 +277,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 }
 
 Pebble.addEventListener('appmessage',
-	function(e) {	
+	function(e) {
 		if (e.payload.id) {
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
 		} else if (e.payload.refresh) {

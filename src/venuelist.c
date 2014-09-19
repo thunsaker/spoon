@@ -72,44 +72,50 @@ static void clean_list() {
 	menu_layer_reload_data_and_mark_dirty(menu_layer);
 }
 
-static void tidy_list() {
-	for(int i=1;i<num_venues;i++) {
-		for(int j=1;j<num_venues;j++) {
-			if(venues[i].index < venues[j].index) {
-				SpoonVenue tempVenue = venues[i];
-				venues[i] = venues[j];
-				venues[j] = tempVenue;
-			}
-		}
-	}
+// static void tidy_list() {
+// 	for(int i=1;i<num_venues;i++) {
+// 		for(int j=1;j<num_venues;j++) {
+// 			if(venues[i].index < venues[j].index) {
+// 				SpoonVenue tempVenue = venues[i];
+// 				venues[i] = venues[j];
+// 				venues[j] = tempVenue;
+// 			}
+// 		}
+// 	}
 	
-	menu_layer_reload_data(menu_layer);
-}
+// 	menu_layer_reload_data(menu_layer);
+// }
 
 bool venuelist_is_on_top() {
 	return window == window_stack_get_top_window();
 }
 
 void venuelist_in_received_handler(DictionaryIterator *iter) {
-	Tuple *index_tuple = dict_find(iter, SPOON_INDEX);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 94");
+
+	int index = dict_find(iter, SPOON_INDEX)->value->int16;
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 98");
+
 	Tuple *id_tuple = dict_find(iter, SPOON_ID);
 	Tuple *name_tuple = dict_find(iter, SPOON_NAME);
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
-	Tuple *refresh_tuple = dict_find(iter, SPOON_REFRESH);
-	Tuple *last_tuple = dict_find(iter, SPOON_LAST);
 	Tuple *recent_tuple = dict_find(iter, SPOON_RECENT);
 
-	if(refresh_tuple) {
-		if(refresh_tuple->value->int16 == 1) {
-			window_stack_pop_all(true);
-			venuelist_destroy();
-			venuelist_show();
-		}
-	}
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 105");
 
-	if (index_tuple && name_tuple && address_tuple) {
+	// if(num_venues == 0) {
+	// 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 108");
+		// window_stack_pop_all(true);
+		// venuelist_destroy();
+		// venuelist_show();
+	// }
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
+
+	if (name_tuple) {
 		SpoonVenue venue;
-		venue.index = index_tuple->value->int16;
+		venue.index = index;
 		strncpy(venue.id, id_tuple->value->cstring, sizeof(venue.id));
 		strncpy(venue.name, name_tuple->value->cstring, sizeof(venue.name));
 		if(address_tuple) {
@@ -117,29 +123,38 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 		} else {
 			strncpy(venue.address, "-", sizeof(venue.address));
 		}
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 126");
 		
-		if(recent_tuple) {
+		if(index == 0) {
 			venue.isRecent = true;
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 130");
 		} else {
 			venue.isRecent = false;
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 133");
 		}
-		
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 135");
 		venues[venue.index] = venue;
-		
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 137");
 		num_venues++;
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 139");
 		menu_layer_reload_data_and_mark_dirty(menu_layer);
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
 		// strap_log_event("/list-load"); 
-	} else if (name_tuple) {
-		strncpy(error, name_tuple->value->cstring, sizeof(error));
-		menu_layer_reload_data_and_mark_dirty(menu_layer);
+	} 
+	// else if (name_tuple) {
+		// strncpy(error, name_tuple->value->cstring, sizeof(error));
+		// menu_layer_reload_data_and_mark_dirty(menu_layer);
 		// strap_log_event("/list-error"); 
-	}
-	
-	if(last_tuple) {
-		tidy_list();
+	// }
+
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Index: %i", index);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Max_Venues %i", MAX_VENUES - 1);
+	if(index == MAX_VENUES - 1) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
+		// tidy_list();
 		menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignCenter, false);
 		vibes_short_pulse();
-		// strap_log_event("/list-full-load"); 
+		strap_log_event("/list-full-load"); 
 	}
 }
 

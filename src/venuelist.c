@@ -95,7 +95,6 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	Tuple *id_tuple = dict_find(iter, SPOON_ID);
 	Tuple *name_tuple = dict_find(iter, SPOON_NAME);
 	Tuple *address_tuple = dict_find(iter, SPOON_ADDRESS);
-	Tuple *recent_tuple = dict_find(iter, SPOON_RECENT);
 
 	if (name_tuple) {
 		SpoonVenue venue;

@@ -21,68 +21,14 @@
         "configurable"
     ],
     "companyName": "Thomas Hunsaker",
-    "longName": "Spoon 1.76",
+    "longName": "Spoon 1.77",
     "projectType": "native",
     "resources": {
         "media": [
             {
-                "file": "images/share_twitter.png",
-                "name": "IMAGE_SHARE_TWITTER",
-                "type": "png"
-            },
-            {
-                "file": "images/share_facebook.png",
-                "name": "IMAGE_SHARE_FACEBOOK",
-                "type": "png"
-            },
-            {
-                "file": "images/check_black_big.png",
-                "name": "IMAGE_CHECK_GRANDE",
-                "type": "png"
-            },
-            {
-                "file": "images/share_black.png",
-                "name": "IMAGE_CHECK_SHARE",
-                "type": "png"
-            },
-            {
-                "file": "images/private_black.png",
-                "name": "IMAGE_CHECK_PRIVATE",
-                "type": "png"
-            },
-            {
-                "file": "images/foursquare_cog.png",
-                "name": "IMAGE_FOURSQUARE_COG_0",
-                "type": "png"
-            },
-            {
-                "file": "images/check_black.png",
-                "name": "IMAGE_CHECK_OK",
-                "type": "png"
-            },
-            {
-                "file": "images/spoon_long_med.png",
-                "name": "IMAGE_APP_LOGO_LONG",
-                "type": "png"
-            },
-            {
-                "file": "images/checkbox_on.png",
-                "name": "IMAGE_CHECK_ON",
-                "type": "png"
-            },
-            {
-                "file": "images/checkbox_off.png",
-                "name": "IMAGE_CHECK_OFF",
-                "type": "png"
-            },
-            {
-                "file": "images/foursquare_cog_1.png",
-                "name": "IMAGE_FOURSQUARE_COG_1",
-                "type": "png"
-            },
-            {
-                "file": "images/foursquare_cog_2.png",
-                "name": "IMAGE_FOURSQUARE_COG_2",
+                "file": "images/spoon_pixelated_24x28.png",
+                "menuIcon": true,
+                "name": "IMAGE_APP_ICON",
                 "type": "png"
             },
             {
@@ -91,9 +37,63 @@
                 "type": "png"
             },
             {
-                "file": "images/spoon_pixelated_24x28.png",
-                "menuIcon": true,
-                "name": "IMAGE_APP_ICON",
+                "file": "images/foursquare_cog_2.png",
+                "name": "IMAGE_FOURSQUARE_COG_2",
+                "type": "png"
+            },
+            {
+                "file": "images/foursquare_cog_1.png",
+                "name": "IMAGE_FOURSQUARE_COG_1",
+                "type": "png"
+            },
+            {
+                "file": "images/checkbox_off.png",
+                "name": "IMAGE_CHECK_OFF",
+                "type": "png"
+            },
+            {
+                "file": "images/checkbox_on.png",
+                "name": "IMAGE_CHECK_ON",
+                "type": "png"
+            },
+            {
+                "file": "images/spoon_long_med.png",
+                "name": "IMAGE_APP_LOGO_LONG",
+                "type": "png"
+            },
+            {
+                "file": "images/check_black.png",
+                "name": "IMAGE_CHECK_OK",
+                "type": "png"
+            },
+            {
+                "file": "images/foursquare_cog.png",
+                "name": "IMAGE_FOURSQUARE_COG_0",
+                "type": "png"
+            },
+            {
+                "file": "images/private_black.png",
+                "name": "IMAGE_CHECK_PRIVATE",
+                "type": "png"
+            },
+            {
+                "file": "images/share_black.png",
+                "name": "IMAGE_CHECK_SHARE",
+                "type": "png"
+            },
+            {
+                "file": "images/check_black_big.png",
+                "name": "IMAGE_CHECK_GRANDE",
+                "type": "png"
+            },
+            {
+                "file": "images/share_facebook.png",
+                "name": "IMAGE_SHARE_FACEBOOK",
+                "type": "png"
+            },
+            {
+                "file": "images/share_twitter.png",
+                "name": "IMAGE_SHARE_TWITTER",
                 "type": "png"
             }
         ]
@@ -101,7 +101,7 @@
     "shortName": "Spoon",
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
     "versionCode": 7,
-    "versionLabel": "1.76",
+    "versionLabel": "1.77",
     "watchapp": {
         "watchface": false
     }

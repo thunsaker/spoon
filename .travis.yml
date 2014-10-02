@@ -24,6 +24,7 @@ before_install:
    - tar -zxf ~/arm-cs-tools-ubuntu-universal.tar.gz
 
    - export PATH=~/pebble-dev/PebbleSDK-2.6/bin:$PATH
+
 script:
    - echo "Building Pebble project..."
    - cd ~/build/thunsaker/spoon

@@ -54,7 +54,6 @@ void venuelist_init(void) {
 }
 
 void venuelist_show() {
-	clean_list();
 	window_stack_push(window, true);
 }
 
@@ -118,10 +117,10 @@ void venuelist_in_received_handler(DictionaryIterator *iter) {
 	}
 
 	if(index == MAX_VENUES - 1) {
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Recieved message. 113");
-		// tidy_list();
-		menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignCenter, false);
-		vibes_short_pulse();
+		if(menu_layer_get_selected_index(menu_layer).row == 0) {
+			menu_layer_set_selected_index(menu_layer, (MenuIndex) { .row = 1, .section = 0 }, MenuRowAlignCenter, false);
+			vibes_short_pulse();
+		}
 		strap_log_event("/list-full-load"); 
 	}
 }
@@ -161,7 +160,13 @@ static void menu_draw_row_callback(GContext *ctx, const Layer *cell_layer, MenuI
 static void menu_select_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {
 	strncpy(venueid, venues[cell_index->row].id, sizeof(venueid));
 	strncpy(venuename, venues[cell_index->row].name, sizeof(venuename));
-	venueconfirmation_show(venueid, venuename);
+	
+	//if(cell_index->row == 0) {
+	// TODO: Show history, or venue detail for last check in.
+		//historylist_show();
+	//} else {
+		venueconfirmation_show(venueid, venuename);
+	//}
 }
 
 static void menu_select_long_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *callback_context) {

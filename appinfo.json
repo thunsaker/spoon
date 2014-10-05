@@ -26,64 +26,18 @@
     "resources": {
         "media": [
             {
-                "file": "images/spoon_pixelated_24x28.png",
-                "menuIcon": true,
-                "name": "IMAGE_APP_ICON",
+                "file": "images/spoon_long_med_new_invert.png",
+                "name": "IMAGE_APP_LOGO_LONG_NEW",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/spoon_text.png",
+                "name": "IMAGE_APP_NAME",
                 "type": "png"
             },
             {
-                "file": "images/foursquare_cog_3.png",
-                "name": "IMAGE_FOURSQUARE_COG_3",
-                "type": "png"
-            },
-            {
-                "file": "images/foursquare_cog_2.png",
-                "name": "IMAGE_FOURSQUARE_COG_2",
-                "type": "png"
-            },
-            {
-                "file": "images/foursquare_cog_1.png",
-                "name": "IMAGE_FOURSQUARE_COG_1",
-                "type": "png"
-            },
-            {
-                "file": "images/checkbox_off.png",
-                "name": "IMAGE_CHECK_OFF",
-                "type": "png"
-            },
-            {
-                "file": "images/checkbox_on.png",
-                "name": "IMAGE_CHECK_ON",
-                "type": "png"
-            },
-            {
-                "file": "images/spoon_long_med.png",
-                "name": "IMAGE_APP_LOGO_LONG",
-                "type": "png"
-            },
-            {
-                "file": "images/check_black.png",
-                "name": "IMAGE_CHECK_OK",
-                "type": "png"
-            },
-            {
-                "file": "images/foursquare_cog.png",
-                "name": "IMAGE_FOURSQUARE_COG_0",
-                "type": "png"
-            },
-            {
-                "file": "images/private_black.png",
-                "name": "IMAGE_CHECK_PRIVATE",
-                "type": "png"
-            },
-            {
-                "file": "images/share_black.png",
-                "name": "IMAGE_CHECK_SHARE",
-                "type": "png"
-            },
-            {
-                "file": "images/check_black_big.png",
-                "name": "IMAGE_CHECK_GRANDE",
+                "file": "images/share_twitter.png",
+                "name": "IMAGE_SHARE_TWITTER",
                 "type": "png"
             },
             {
@@ -92,8 +46,49 @@
                 "type": "png"
             },
             {
-                "file": "images/share_twitter.png",
-                "name": "IMAGE_SHARE_TWITTER",
+                "file": "images/check_black_big.png",
+                "name": "IMAGE_CHECK_GRANDE",
+                "type": "png"
+            },
+            {
+                "file": "images/share_black.png",
+                "name": "IMAGE_CHECK_SHARE",
+                "type": "png"
+            },
+            {
+                "file": "images/private_black.png",
+                "name": "IMAGE_CHECK_PRIVATE",
+                "type": "png"
+            },
+            {
+                "file": "images/foursquare_cog.png",
+                "name": "IMAGE_FOURSQUARE_COG_0",
+                "type": "png"
+            },
+            {
+                "file": "images/check_black.png",
+                "name": "IMAGE_CHECK_OK",
+                "type": "png"
+            },
+            {
+                "file": "images/spoon_long_med.png",
+                "name": "IMAGE_APP_LOGO_LONG",
+                "type": "png"
+            },
+            {
+                "file": "images/checkbox_on.png",
+                "name": "IMAGE_CHECK_ON",
+                "type": "png"
+            },
+            {
+                "file": "images/checkbox_off.png",
+                "name": "IMAGE_CHECK_OFF",
+                "type": "png"
+            },
+            {
+                "file": "images/spoon_pixelated_24x28.png",
+                "menuIcon": true,
+                "name": "IMAGE_APP_ICON",
                 "type": "png"
             }
         ]

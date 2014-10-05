@@ -6,6 +6,7 @@
 #include "common.h"
 #include "checkinresult.h"
 #include "strap/strap.h"
+#include "splash.h"
 	
 #define KEY_TOKEN 10
 	
@@ -17,6 +18,8 @@ static GBitmap *image_spoon;
 static BitmapLayer *image_layer_cog;
 static GBitmap *image_cog;
 static bool wasOnTop = false;
+AppTimer *timer;
+static bool canHideSplash = false;
 
 void showConnectedMessage() {
 	text_layer_set_text(text_layer, "Connected to Foursquare!");
@@ -68,13 +71,14 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	} else if(text_tuple_result) {
 		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
 	} else if(!text_tuple_token) {
-		if(!venuelist_is_on_top() && !wasOnTop) {
+		bool listOnTop = venuelist_is_on_top();
+		if(!listOnTop && !wasOnTop && canHideSplash) {
 			window_stack_pop_all(true);
 			venuelist_show();
 			wasOnTop = true;
 		}
 		
-		if (venuelist_is_on_top()) {
+		if (listOnTop || (!listOnTop && !canHideSplash)) {
 			venuelist_in_received_handler(iter);
 		} else {
 			app_message_outbox_send();
@@ -114,12 +118,8 @@ void in_dropped_handler(AppMessageResult reason, void *context) {
    	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
-void window_load() {
-	window = window_create();
-	window_stack_push(window, true);
-
+void load_welcome_window() {
 	Layer *window_layer = window_get_root_layer(window);
-
 	GRect bounds = layer_get_frame(window_layer);
 
 	image_spoon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_APP_LOGO_LONG);
@@ -138,7 +138,9 @@ void window_load() {
 	image_layer_cog = bitmap_layer_create(GRect(64,130,16,16));
 	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
 	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
-
+}
+		   
+void attempt_load_venues() {
 	if(bluetooth_connection_service_peek()) {
 		if(persist_exists(KEY_TOKEN)) {
 			getListOfLocations();
@@ -149,6 +151,19 @@ void window_load() {
 		text_layer_set_text(text_layer, "Error:\nCan't load venues, no connection to phone.");
 		layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
 	}
+}
+
+void splash_callback(void *data) {
+	canHideSplash = true;
+}
+
+void window_load() {
+	window = window_create();
+	window_stack_push(window, true);
+	show_splash();
+	load_welcome_window();
+	attempt_load_venues();
+	timer = app_timer_register(2000, (AppTimerCallback)splash_callback, NULL);
 }
 
 void init() {

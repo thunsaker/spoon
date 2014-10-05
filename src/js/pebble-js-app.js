@@ -77,6 +77,7 @@ function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
 		var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 		req.open('GET', requestUrl, true);
+		console.log("Venues: " + requestUrl);
 		req.onload = function(e) {
 			if (req.readyState == 4) {
 				if (req.status == 200) {
@@ -135,6 +136,7 @@ function fetchMostRecentCheckin(token) {
 	var current_time = Math.round(new Date().getTime() / 1000);
 	var requestUrlRecent = 'https://api.foursquare.com/v2/users/self/checkins?oauth_token=' + token + '&v=' + api_date + '&m=foursquare&beforeTimestamp=' + current_time + '&sort=newestfirst&limit=1';
 	reqRecent.open('GET', requestUrlRecent, true);
+	console.log("Venues: " + requestUrlRecent);
 	reqRecent.onload = function(e) {
 		if (reqRecent.readyState == 4) {
 			if (reqRecent.status == 200) {
@@ -190,7 +192,7 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-			// console.log('Trying to send a message: ' + currentAppMessage.message.name);
+			console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -237,6 +239,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 				}
 				
 				req.open('POST', checkinRequestUrl, true);
+				console.log("Venues: " + checkinRequestUrl);
 				req.onload = function(e) {
 					if (req.readyState == 4) {
 						if (req.status == 200) {

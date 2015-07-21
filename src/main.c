@@ -1,33 +1,88 @@
-// 2014 Thomas Hunsaker @thunsaker
+// 2015 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
-#include "venuelist.h"
-#include "pebble-assist.h"
+#include "libs/pebble-assist.h"
+#ifdef PBL_COLOR
+	#include "libs/dithered_rects.h"
+	#include "colors.h"
+#endif
+#include "checkin_menu.h"
+#include "checkin.h"
+#include "libs/math-utils.h"
 #include "common.h"
-#include "checkinresult.h"
-#include "strap/strap.h"
-	
-#define KEY_TOKEN 10
-	
-static Window *window;
+#include "dialog_window.h"
 
-static TextLayer *text_layer;
-static BitmapLayer *image_layer;
-static GBitmap *image_spoon;
-static BitmapLayer *image_layer_cog;
+#define BOX_HEIGHT 84
+#define ROW_HEIGHT 52
+	
+#define ANIM_DURATION 100
+#define ANIM_DELAY 300
+	
+#define NUM_MENU_SECTIONS 1
+#define NUM_MENU_ITEMS 17
+	
+#define MAX_VENUES 15
+
+static SpoonVenue venues[MAX_VENUES];
+static int num_venues;
+static char error[128];
+static char venueid[128];
+static char venuename[512];
+
+static Window *s_main_window;
+#ifdef PBL_SDK_3
+	static StatusBarLayer *s_status_bar;
+#endif
+
 static GBitmap *image_cog;
-static bool wasOnTop = false;
+static BitmapLayer *image_layer_back;
+static Layer *layer_back;
+static Layer *layer_primary_back;
+static TextLayer *text_layer_primary;
+static TextLayer *text_layer_primary_address;
+static Layer *layer_primary_circle;
+static MenuLayer *layer_menu_venues;
 
-void showConnectedMessage() {
-	text_layer_set_text(text_layer, "Connected to Foursquare!");
-}
+#ifdef PBL_COLOR
+	static uint8_t primary_color;
+	static uint8_t accent_color;
+	static uint8_t back_color;
+	static uint8_t new_back_color;
+	static uint8_t result_color;
+#endif
 
-void out_sent_handler(DictionaryIterator *sent, void *context) { }
+#define MAX_CIRCLE_RADIUS 142
+#define DEFAULT_CIRCLE_RADIUS 21
+#define DEFAULT_CIRCLE_RADIUS_MINI 15
 
+static bool show_checkin;
+static bool grow_circle;
+static bool drop_and_shrink;
+static int circle_radius = DEFAULT_CIRCLE_RADIUS;
+static int circle_radius_count = 1;
+AppTimer *circle_grow_timer;
+static bool reverse_menu_animation;
+static bool menu_mode;
+static bool no_foursquare;
+static bool no_internet;
+static int up_count = 0;
 
-void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) { }
+static GPath *s_check_path = NULL;
+static const GPathInfo CHECK_PATH_POINTS = {
+	7,
+	(GPoint []) {{104,78},{101,83},{109,93},{124,73},{121,68},{109,85},{104,78}}
+};
 
-void getListOfLocations() {
+static PropertyAnimation *s_bounce_animation;
+static int s_bounce_current_stage = 0;
+
+static PropertyAnimation *s_transition_box_animation;
+static PropertyAnimation *s_transition_text_1_animation;
+static PropertyAnimation *s_transition_text_2_animation;
+static PropertyAnimation *s_transition_circle_animation;
+static PropertyAnimation *s_transition_menu_animation;
+
+static void getListOfLocations() {
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, 1);
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
@@ -36,58 +91,519 @@ void getListOfLocations() {
 		return;
 	}
 
-	Layer *window_layer = window_get_root_layer(window);
-	layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
-	
-	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG_0);
-	image_layer_cog = bitmap_layer_create(GRect(64,82,16,16));
-	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
-	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
-	
-	text_layer_set_text(text_layer, "Getting nearest venues. \n\nTip: Long-press for quick check-in.");
-
+	text_layer_set_text(text_layer_primary_address, "");
+	if(up_count == 2) {
+		text_layer_set_text(text_layer_primary, "Refreshing...");
+		up_count = 0;
+	} else {
+		text_layer_set_text(text_layer_primary, "Fetching nearest venues...");
+	}
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
 	app_message_outbox_send();
 }
 
-void in_received_handler(DictionaryIterator *iter, void *context) {
-	Tuple *text_tuple_token = dict_find(iter, SPOON_TOKEN);
-	Tuple *text_tuple_latlng = dict_find(iter, SPOON_LOCATION);
-	Tuple *text_tuple_result = dict_find(iter, SPOON_RESULT);
-	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
-	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
+static void bounce_animation();
 
-	if(text_tuple_error) {
-		text_layer_set_text(text_layer, text_tuple_error->value->cstring);
-	} else if(text_tuple_token && !text_tuple_latlng) {
-		text_layer_set_text(text_layer, "Connected to Foursquare!");
-		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
+static void bounce_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_PLATFORM_APLITE
+  		// Free the animation
+  		property_animation_destroy(s_bounce_animation);
+	#endif
 
-		getListOfLocations();
-	} else if(text_tuple_result) {
-		checkinresult_show(text_tuple_result->value->int16, text_tuple_name->value->cstring);
-	} else if(!text_tuple_token) {
-		if(!venuelist_is_on_top() && !wasOnTop) {
-			window_stack_pop_all(true);
-			venuelist_show();
-			wasOnTop = true;
-		}
-		
-		if (venuelist_is_on_top()) {
-			venuelist_in_received_handler(iter);
-		} else {
-			app_message_outbox_send();
-		}
-	} else if(text_tuple_latlng) {
-		text_layer_set_text(text_layer, text_tuple_latlng->value->cstring);
+  	// Schedule the next one, unless the app is exiting
+  	if (finished || s_bounce_current_stage == 1) {
+		bounce_animation();
+	}
+}
+
+static void bounce_animation() {
+  // Determine start and finish positions
+	GRect start, finish;
+  	switch (s_bounce_current_stage) {
+		case 0:
+		  	start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
+		  	finish = GRect(0, 94 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT + 10);
+		  	break;
+		case 1:
+		  	start = GRect(0, 94 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT + 10);
+		  	finish = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
+		  	break;
+		default:
+			start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
+		  	finish = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);			
+		  	break;
+	}
+
+	if(s_bounce_current_stage < 2) {
+		// Schedule the next animation
+		s_bounce_animation = property_animation_create_layer_frame(layer_primary_back, &start, &finish);
+		animation_set_duration((Animation*)s_bounce_animation, ANIM_DURATION);
+		animation_set_delay((Animation*)s_bounce_animation, ANIM_DELAY);
+		animation_set_curve((Animation*)s_bounce_animation, AnimationCurveEaseInOut);
+		animation_set_handlers((Animation*)s_bounce_animation, (AnimationHandlers) {
+			.stopped = bounce_anim_stopped_handler
+		}, NULL);
+		animation_schedule((Animation*)s_bounce_animation);
+
+		// Increment stage and wrap
+		s_bounce_current_stage = (s_bounce_current_stage + 1) % 3;
+	}
+}
+
+static void transition_circle_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_PLATFORM_APLITE
+  		property_animation_destroy(s_transition_circle_animation);
+		property_animation_destroy(s_transition_box_animation);
+		property_animation_destroy(s_transition_text_1_animation);
+		property_animation_destroy(s_transition_text_2_animation);
+	#endif
+
+	drop_and_shrink = !reverse_menu_animation;
+	layer_mark_dirty(layer_primary_circle);
+	reverse_menu_animation = false;
+}
+
+static void transition_menu_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_PLATFORM_APLITE
+  		property_animation_destroy(s_transition_menu_animation);
+	#endif
+}
+
+static void transition_animation() {
+	// Primary Back
+	GRect start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT + STATUS_BAR_OFFSET);
+	GRect finish = GRect(0, -10 - ROW_HEIGHT, SCREEN_WIDTH, ROW_HEIGHT + 10);
+	if(reverse_menu_animation) {
+		s_transition_box_animation = 
+			property_animation_create_layer_frame(layer_primary_back, &finish, &start);
 	} else {
-		if(!text_tuple_token) {
-			text_layer_set_text(text_layer, "Please connect to Foursquare");
+		s_transition_box_animation = 
+			property_animation_create_layer_frame(layer_primary_back, &start, &finish);
+	}
+	Animation *anim_slide_box = 
+		property_animation_get_animation(s_transition_box_animation);
+	animation_set_duration(anim_slide_box, 500);
+	animation_schedule(anim_slide_box);
+	layer_mark_dirty(layer_primary_back);
+	
+	// FAB
+	start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
+	//finish = GRect(-94, -43, SCREEN_WIDTH, 168); Inline with first item
+	finish = GRect(0, 144, SCREEN_WIDTH, 168);
+	if(reverse_menu_animation) {
+		s_transition_circle_animation = 
+			property_animation_create_layer_frame(layer_primary_circle, &finish, &start);
+	} else {
+		s_transition_circle_animation = 
+			property_animation_create_layer_frame(layer_primary_circle, &start, &finish);
+	}
+	Animation *anim_slide_circle = 
+		property_animation_get_animation(s_transition_circle_animation);
+	animation_set_duration(anim_slide_circle, 500);
+	animation_set_handlers((Animation*)s_transition_circle_animation, (AnimationHandlers) {
+		.stopped = transition_circle_anim_stopped_handler
+	}, NULL);
+	animation_schedule(anim_slide_circle);
+	
+	// Text 1
+	//start = GRect(10, 94, SCREEN_WIDTH, 74);
+	start = GRect(10, 10, 124, 50);
+	finish = GRect(10, 15, 102, 24);
+	if(reverse_menu_animation) {
+		text_layer_set_text_color(text_layer_primary, GColorBlack);
+		s_transition_text_1_animation = 
+			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary), &finish, &start);
+	} else {
+		#ifdef PBL_COLOR
+			text_layer_set_text_color(text_layer_primary, GColorDarkGray);
+		#endif
+		s_transition_text_1_animation = 
+			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary), &start, &finish);
+	}
+	Animation *anim_slide_text_1 = 
+		property_animation_get_animation(s_transition_text_1_animation);
+	animation_set_duration(anim_slide_text_1, 500);
+	animation_schedule(anim_slide_text_1);
+	text_layer_set_size(text_layer_primary,GSize(102,24));
+	text_layer_set_text(text_layer_primary, venues[0].name);
+	
+	// Text 2
+	//start = GRect(10, 144, SCREEN_WIDTH, 20);
+	start = GRect(10, 60, 124, 20);
+	finish = GRect(10, 39, 102, 20);
+	if(reverse_menu_animation) {
+		text_layer_set_text_color(text_layer_primary_address, GColorBlack);
+		s_transition_text_2_animation = 
+			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary_address), &finish, &start);
+	} else {
+		#ifdef PBL_COLOR
+			text_layer_set_text_color(text_layer_primary_address, GColorDarkGray);
+		#endif
+		s_transition_text_2_animation = 
+			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary_address), &start, &finish);
+	}
+	Animation *anim_slide_text_2 = 
+		property_animation_get_animation(s_transition_text_2_animation);
+	animation_set_duration(anim_slide_text_2, 500);
+	animation_schedule(anim_slide_text_2);
+	text_layer_set_size(text_layer_primary_address,GSize(102,20));
+	
+	// Menu
+	start = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
+	#ifdef PBL_COLOR
+		finish = GRect(0, 15, SCREEN_WIDTH, SCREEN_HEIGHT);
+	#else
+		finish = GRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	#endif
+		
+	if(reverse_menu_animation) {
+		s_transition_menu_animation = 
+			property_animation_create_layer_frame(menu_layer_get_layer(layer_menu_venues), &finish, &start);
+		menu_mode = false;
+	} else {
+		s_transition_menu_animation = 
+			property_animation_create_layer_frame(menu_layer_get_layer(layer_menu_venues), &start, &finish);
+		menu_mode = true;
+	}
+	Animation *anim_slide_menu = 
+		property_animation_get_animation(s_transition_menu_animation);
+	animation_set_duration(anim_slide_menu, 500);
+	animation_set_handlers((Animation*)s_transition_menu_animation, (AnimationHandlers) {
+		.stopped = transition_menu_anim_stopped_handler
+	}, NULL);
+	animation_schedule(anim_slide_menu);
+}
+
+void circle_grow_timer_tick() {
+	if(circle_radius < MAX_CIRCLE_RADIUS) {
+		circle_radius += x_to_the_n(2,circle_radius_count++);
+		layer_mark_dirty(layer_primary_circle);
+		circle_grow_timer = app_timer_register(100, circle_grow_timer_tick, NULL);
+	} else {
+		grow_circle = false;
+		show_checkin = false;
+		
+		circle_radius = DEFAULT_CIRCLE_RADIUS;
+		circle_radius_count = 1;
+		
+		app_timer_cancel(circle_grow_timer);
+		checkin_show();
+	}
+}
+
+static void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+	if(no_foursquare) {
+	} else {
+		if(menu_mode) {
+			if(menu_layer_get_selected_index(layer_menu_venues).row == 1) {
+				reverse_menu_animation = true;
+				menu_mode = false;
+				transition_animation();
+			}
+			menu_layer_set_selected_next(layer_menu_venues, true, MenuRowAlignCenter, true);
 		} else {
-			text_layer_set_text(text_layer, "Cannot determine current location. :(");
+			// Start animation loop
+			s_bounce_current_stage = 0;
+			bounce_animation();
+			up_count++;
+			if(up_count == 2) {
+				getListOfLocations();
+			}
 		}
 	}
+}
+
+static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+	if(no_internet || no_foursquare || num_venues == 0) {
+	} else {
+		if(menu_mode) {
+			menu_layer_set_selected_next(layer_menu_venues, false, MenuRowAlignCenter, true);
+		} else {
+			up_count = 0;
+			reverse_menu_animation = false;
+			transition_animation();
+			drop_and_shrink = false;
+			menu_layer_set_selected_index(layer_menu_venues, MenuIndex(1,1), MenuRowAlignCenter, true);
+		}
+	}
+}
+
+static void select_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+	if(no_internet || no_foursquare || num_venues == 0) {
+	} else {
+		if(menu_mode) {
+			int selectedIndex = menu_layer_get_selected_index(layer_menu_venues).row;
+			if(selectedIndex != NUM_MENU_ITEMS - 1) {
+				strncpy(venueid, venues[selectedIndex].id, sizeof(venueid));
+				strncpy(venuename, venues[selectedIndex].name, sizeof(venuename));
+				checkin_menu_show(menu_mode, venueid, venuename);
+			}
+		} else {
+			strncpy(venueid, venues[0].id, sizeof(venueid));
+			strncpy(venuename, venues[0].name, sizeof(venuename));
+			checkin_menu_show(menu_mode, venueid, venuename);
+		}
+	}
+}
+
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+	if(no_internet || no_foursquare || num_venues == 0) {
+	} else {
+		if(menu_mode) {
+			int selectedIndex = menu_layer_get_selected_index(layer_menu_venues).row;
+			if(selectedIndex != NUM_MENU_ITEMS - 1) {
+				strncpy(venueid, venues[selectedIndex].id, sizeof(venueid));
+				strncpy(venuename, venues[selectedIndex].name, sizeof(venuename));
+				checkin_send_request(venueid, venuename, 0, 0, 0, true);
+				vibes_double_pulse();
+			}
+		} else {
+			strncpy(venueid, venues[0].id, sizeof(venueid));
+			strncpy(venuename, venues[0].name, sizeof(venuename));
+			show_checkin = true;
+			grow_circle = true;
+			
+			// Start timer to grow circle
+			circle_grow_timer = app_timer_register(100, circle_grow_timer_tick, NULL);
+			checkin_send_request(venueid, venuename, 0, 0, 0, false);
+			vibes_double_pulse();
+		}
+	}
+}
+
+static void click_config_provider(void *context) {
+	window_single_click_subscribe(BUTTON_ID_SELECT, (ClickHandler) select_single_click_handler);
+	window_long_click_subscribe(BUTTON_ID_SELECT, 0, NULL, (ClickHandler) select_long_click_handler);
+	window_single_click_subscribe(BUTTON_ID_UP, (ClickHandler) up_single_click_handler);
+	window_single_click_subscribe(BUTTON_ID_DOWN, (ClickHandler) down_single_click_handler);
+}
+
+void draw_image_layer_back(Layer *cell_layer, GContext *ctx) {
+	#ifdef PBL_COLOR
+		draw_transitioning_rect(ctx, GRect(0,0,144,168), (GColor)back_color, (GColor)new_back_color);
+	#endif
+}
+
+void draw_layer_primary_back(Layer *cell_layer, GContext *ctx) {
+	#ifdef PBL_COLOR
+		graphics_context_set_fill_color(ctx, (GColor)back_color);
+		graphics_fill_rect(ctx, GRect(0,0,144,94), 0, GCornerNone);
+	#else
+		graphics_context_set_fill_color(ctx, GColorBlack);
+		graphics_fill_rect(ctx, GRect(0,0,144,2), 0, GCornersTop);
+	#endif
+}
+
+void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
+	if(show_checkin) {
+		if(grow_circle) {
+			#if PBL_COLOR
+				graphics_context_set_fill_color(ctx, (GColor)accent_color);
+			#else
+				graphics_context_set_fill_color(ctx, GColorBlack);
+			#endif
+			
+			graphics_fill_circle(ctx, GPoint(113,81), circle_radius);
+		}
+	} else if(drop_and_shrink) {
+		#if PBL_COLOR
+			graphics_context_set_fill_color(ctx, (GColor)accent_color);
+		#else
+			graphics_context_set_fill_color(ctx, GColorBlack);
+		#endif
+		graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS_MINI);
+	} else {
+		#ifdef PBL_COLOR
+			// Shadow
+			draw_twenty_percent_circle(ctx, 115, 85, DEFAULT_CIRCLE_RADIUS + 2, GColorClear, GColorDarkGray);
+		
+			graphics_context_set_fill_color(ctx, (GColor)accent_color);
+		#else
+			graphics_context_set_fill_color(ctx, GColorBlack);
+		#endif
+		// Circle
+		graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS);
+		// Icon
+		graphics_context_set_fill_color(ctx, GColorWhite);
+		graphics_context_set_stroke_color(ctx, GColorWhite);
+		s_check_path = gpath_create(&CHECK_PATH_POINTS);
+		gpath_draw_filled(ctx, s_check_path);
+	}
+}
+
+static uint16_t menu_get_num_sections_callback(struct MenuLayer *menu_layer, void *callback_context) {
+	return NUM_MENU_SECTIONS;
+}
+
+static uint16_t menu_get_num_rows_callback(struct MenuLayer *menu_layer, uint16_t section_index, void *callback_context) {
+	return NUM_MENU_ITEMS;
+}
+
+static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+	return 0;
+}
+
+static int16_t menu_get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
+	return 52;
+}
+
+static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) { }
+
+static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+	if(cell_index->row == NUM_MENU_ITEMS - 1) {
+		#ifdef PBL_COLOR
+			GRect bounds = layer_get_bounds(cell_layer);
+			GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+			graphics_draw_text(ctx, "Powered by Foursquare", little_font,
+							  GRect(5, 4, bounds.size.w - 10, 20),
+							  GTextOverflowModeFill,
+							  GTextAlignmentCenter,
+							  NULL);
+		
+			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
+			GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
+									30,
+									bitmap_bounds.size.w, bitmap_bounds.size.h);
+			graphics_context_set_compositing_mode(ctx, GCompOpSet);
+			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
+		#else
+			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
+		#endif	
+	} else {
+		#ifdef PBL_COLOR
+			GRect bounds = layer_get_bounds(cell_layer);
+			GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+			graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
+							   GRect(5, 4, bounds.size.w - 10, 25),
+							   GTextOverflowModeTrailingEllipsis, 
+							   GTextAlignmentLeft,
+							   NULL);
+			GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+			graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+							   GRect(5, 30, bounds.size.w - 10, 20),
+							   GTextOverflowModeTrailingEllipsis, 
+							   GTextAlignmentLeft,
+							   NULL);
+		#else
+			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
+		#endif
+	}
+}
+
+static void window_load(Window *window) {
+	Layer *window_layer = window_get_root_layer(window);
+
+	GRect bounds = layer_get_frame(window_layer);
+	
+	#ifdef PBL_COLOR
+		// TODO: Allow theme selection from config screen?
+		colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
+		//colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
+		//colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
+		//colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
+	#endif
+	
+	// Background
+  	#if PBL_COLOR
+		accent_color = get_accent_color();
+		back_color = get_back_color();
+		primary_color = get_primary_color();
+		new_back_color = primary_color;
+		result_color = GColorIslamicGreen.argb;
+		window_set_background_color(window, (GColor)back_color);
+	#else
+		window_set_background_color(window, GColorWhite);
+  	#endif
+	
+	// Main Background
+	layer_back = layer_create(GRect(0,0,bounds.size.w,bounds.size.h));
+	layer_set_update_proc(layer_back, draw_image_layer_back);
+	layer_add_child(window_layer, layer_back);
+	
+	#ifdef PBL_COLOR
+		// TODO: Show image from the first venue, maybe
+		start_transitioning_rect(layer_back, 100, 1);
+	#endif
+	
+	// Menu
+	layer_menu_venues = menu_layer_create(
+		GRect(0,168,bounds.size.w, bounds.size.h));
+	menu_layer_set_callbacks(layer_menu_venues, NULL, (MenuLayerCallbacks) {
+		.get_num_sections = menu_get_num_sections_callback,
+		.get_num_rows = menu_get_num_rows_callback,
+		.get_header_height = menu_get_header_height_callback,
+		.draw_header = menu_draw_header_callback,
+		.get_cell_height = menu_get_cell_height_callback,
+		.draw_row = menu_draw_row_callback
+	});
+	menu_mode = false;
+	
+	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_COG);
+	
+	#ifdef PBL_SDK_3
+		menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
+		menu_layer_set_highlight_colors(layer_menu_venues, GColorWhite, GColorBlack);
+	#else
+		
+	#endif
+	layer_add_child(window_layer, menu_layer_get_layer(layer_menu_venues));
+
+	// Text Background 1
+	layer_primary_back = layer_create(GRect(0,84 - STATUS_BAR_OFFSET,144,84 + STATUS_BAR_OFFSET));
+	layer_set_update_proc(layer_primary_back, draw_layer_primary_back);
+	layer_add_child(window_layer, layer_primary_back);
+	
+	// Text 1
+	//text_layer_primary = text_layer_create(GRect(10,94,124,50));
+	text_layer_primary = text_layer_create(GRect(10,10,124,74));
+	text_layer_set_text_color(text_layer_primary, GColorBlack);
+	text_layer_set_background_color(text_layer_primary, GColorClear);
+	text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	text_layer_set_text_alignment(text_layer_primary, GTextAlignmentLeft);
+	text_layer_set_overflow_mode(text_layer_primary, GTextOverflowModeTrailingEllipsis);
+	text_layer_set_text(text_layer_primary, "Loading...");
+	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
+
+	//text_layer_primary_address = text_layer_create(GRect(10,144,124,20));
+	text_layer_primary_address = text_layer_create(GRect(10,60,124,20));
+	text_layer_set_text_color(text_layer_primary_address, GColorBlack);
+	text_layer_set_background_color(text_layer_primary_address, GColorClear);
+	text_layer_set_font(text_layer_primary_address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+	text_layer_set_text_alignment(text_layer_primary_address, GTextAlignmentLeft);
+	text_layer_set_text(text_layer_primary_address, "");
+	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
+	
+	// FAB
+	layer_primary_circle = layer_create(GRect(0,0 - STATUS_BAR_OFFSET,bounds.size.w,bounds.size.h));
+	layer_set_update_proc(layer_primary_circle, draw_layer_primary_circle);
+	layer_add_child(window_layer, layer_primary_circle);
+	
+	// Status Bar
+	#ifdef PBL_SDK_3
+		s_status_bar = status_bar_layer_create();
+		status_bar_layer_set_separator_mode(s_status_bar, StatusBarLayerSeparatorModeDotted);
+		status_bar_layer_set_colors(s_status_bar, GColorClear, GColorBlack);
+		layer_add_child(
+			window_layer, status_bar_layer_get_layer(s_status_bar));
+	#endif
+		
+	reverse_menu_animation = false;
+	
+	if(bluetooth_connection_service_peek()) {
+		if(persist_exists(KEY_TOKEN)) {
+			no_foursquare = false;
+		} else {
+			no_foursquare = true;
+			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+		}
+	} else {
+		no_internet = true;
+		text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NO_PHONE);
+	}
+}
+
+static void window_unload(Window *window) {
 }
 
 char *translate_error(AppMessageResult result) {
@@ -110,70 +626,120 @@ char *translate_error(AppMessageResult result) {
   }
 }
 
+void out_sent_handler(DictionaryIterator *sent, void *context) {
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Out Sent");
+}
+
+void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Out dropped: %i - %s", reason, translate_error(reason));
+	//text_layer_set_text(text_layer_primary, translate_error(reason));
+}
+
+void in_received_handler(DictionaryIterator *iter, void *context) {
+	Tuple *text_tuple_token = dict_find(iter, SPOON_TOKEN);
+	Tuple *text_tuple_latlng = dict_find(iter, SPOON_LOCATION);
+	Tuple *text_tuple_result = dict_find(iter, SPOON_RESULT);
+	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
+	Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
+	Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
+	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
+	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
+	
+	if(text_tuple_error) {
+		text_layer_set_text(text_layer_primary, text_tuple_error->value->cstring);
+	} else if(text_tuple_ready) {
+		if(!no_foursquare) {
+			getListOfLocations();
+		}
+	} else if(text_tuple_token && !text_tuple_latlng) {
+		text_layer_set_text(text_layer_primary, "Connected to Foursquare!");
+		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
+		persist_exists(KEY_TOKEN);
+		char key_stored[50];
+		persist_read_string(KEY_TOKEN, key_stored, sizeof(key_stored));
+		no_foursquare = false;
+		getListOfLocations();
+	} else if(text_tuple_result) {
+		checkin_result_receiver((bool)text_tuple_result->value->int16);
+	} else if(!text_tuple_token) {
+		int index = dict_find(iter, SPOON_INDEX)->value->int16;
+		if(index && text_tuple_name) {
+			SpoonVenue venue;
+			venue.index = index - 1;
+			strncpy(venue.id, text_tuple_id->value->cstring, sizeof(venue.id));
+			strncpy(venue.name, text_tuple_name->value->cstring, sizeof(venue.name));
+			if(text_tuple_address) {
+				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
+			} else {
+				strncpy(venue.address, "-", sizeof(venue.address));
+			}
+
+			/*
+			// TODO: Restore last venue checkin somehow
+			if(index == 0) {
+				venue.isRecent = true;
+			} else {
+				venue.isRecent = false;
+			}
+			*/
+			venues[venue.index] = venue;
+			num_venues++;
+			
+			//APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
+			
+			if(venue.index == 0) {
+				text_layer_set_size(text_layer_primary, GSize(124,50));
+				text_layer_set_text(text_layer_primary, venues[0].name);
+				text_layer_set_text(text_layer_primary_address, venues[0].address);
+				layer_mark_dirty(text_layer_get_layer(text_layer_primary));
+				layer_mark_dirty(layer_primary_back);
+			}
+			menu_layer_reload_data_and_mark_dirty(layer_menu_venues);
+			
+			if(index == MAX_VENUES - 1) {
+				// TODO: For when I put the last venue back in place
+				//menu_layer_set_selected_index(layer_menu_venues, MenuIndex(0,1), MenuRowAlignCenter, false);
+				vibes_short_pulse();
+			}
+		}
+		app_message_outbox_send();
+	} else {
+		if(!text_tuple_token) {
+			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+		} else {
+			text_layer_set_text(text_layer_primary, "Cannot determine current location. :(");
+		}
+	}
+}
+
 void in_dropped_handler(AppMessageResult reason, void *context) {
    	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
-void window_load() {
-	window = window_create();
-	window_stack_push(window, true);
-
-	Layer *window_layer = window_get_root_layer(window);
-
-	GRect bounds = layer_get_frame(window_layer);
-
-	image_spoon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_APP_LOGO_LONG);
-	image_layer = bitmap_layer_create(GRect(0,5,bounds.size.w, 20));
-	bitmap_layer_set_bitmap(image_layer, image_spoon);
-	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer));
-
-	text_layer = text_layer_create(GRect(0,25, bounds.size.w, bounds.size.h));
-	text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-	text_layer_set_overflow_mode(text_layer, GTextOverflowModeWordWrap);
-	text_layer_set_font(text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
-	text_layer_set_text(text_layer, "Welcome to Spoon!");
-	layer_add_child(window_layer, text_layer_get_layer(text_layer));
-	
-	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_FOURSQUARE_COG_0);
-	image_layer_cog = bitmap_layer_create(GRect(64,130,16,16));
-	bitmap_layer_set_bitmap(image_layer_cog, image_cog);
-	layer_add_child(window_layer, bitmap_layer_get_layer(image_layer_cog));
-
-	if(bluetooth_connection_service_peek()) {
-		if(persist_exists(KEY_TOKEN)) {
-			getListOfLocations();
-		} else {
-			text_layer_set_text(text_layer, "Connect to Foursquare using the Pebble app on your phone.");
-		}
-	} else {
-		text_layer_set_text(text_layer, "Error:\nCan't load venues, no connection to phone.");
-		layer_remove_from_parent(bitmap_layer_get_layer(image_layer_cog));
-	}
-}
-
-void init() {
+static void init(void) {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);	
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
 	
-	window_load();
-	venuelist_init();
-	checkinresult_init();
-	strap_init(); // initialize strap!
+	s_main_window = window_create();
+	window_set_click_config_provider(s_main_window, click_config_provider);
+	window_set_window_handlers(s_main_window, (WindowHandlers) {
+		.load = window_load,
+		.unload = window_unload,
+	});
+	window_stack_push(s_main_window, true);
 }
 
-void window_unload() {
-	text_layer_destroy(text_layer);
-	window_destroy(window);
-}
-
-void deinit() {
-	venuelist_destroy();
-	checkinresult_destroy();
-	strap_deinit();
-	window_unload();
+static void deinit(void) {
+  	animation_unschedule_all();
+	text_layer_destroy(text_layer_primary);
+	text_layer_destroy(text_layer_primary_address);
+	layer_destroy(layer_primary_back);
+	layer_destroy(layer_back);
+	bitmap_layer_destroy(image_layer_back);
+	window_destroy(s_main_window);
 }
 
 int main(void) {

@@ -1,6 +1,8 @@
-// 2014 Thomas Hunsaker @thunsaker
+// 2015 Thomas Hunsaker @thunsaker
 
 #pragma once
+	
+#include <pebble.h>
 
 typedef struct {
         char id[25];
@@ -25,5 +27,16 @@ enum {
 	SPOON_ERROR = 0xB,
 	SPOON_LAST = 0xC,
 	SPOON_RECENT = 0xD,
-	SPOON_TIP = 0xE
+	SPOON_READY = 0xE
 };
+
+#define KEY_TOKEN 10
+	
+#define SCREEN_WIDTH 144
+#ifdef PBL_SDK_3
+	#define SCREEN_HEIGHT 168
+	#define STATUS_BAR_OFFSET 0
+#else
+	#define SCREEN_HEIGHT 156
+	#define STATUS_BAR_OFFSET 12
+#endif

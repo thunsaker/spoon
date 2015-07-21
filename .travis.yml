@@ -1,32 +1,14 @@
-language: c
-before_install:
-   #!/usr/bin/env bash
-   - echo 'Installing Pebble SDK Dependencies...'
-   - cd ~
-
-   - wget https://bootstrap.pypa.io/ez_setup.py -O - | sudo python
-
-   # Get the Pebble SDK and toolchain
-   - wget https://sdk.getpebble.com/download/3.1 -O sdk.tar.gz 
-   - wget http://assets.getpebble.com.s3-website-us-east-1.amazonaws.com/sdk/arm-cs-tools-ubuntu-universal.tar.gz
-
-   # Build the Pebble directory
-   - mkdir ~/pebble-dev
-   - cd ~/pebble-dev
-
-   # Extract the SDK
-   - tar -zxf ~/sdk.tar.gz
-   - cd ~/pebble-dev/PebbleSDK-3.1
-
-   - sudo pip install --upgrade -r requirements.txt
-
-   # Extract the toolchain
-   - tar -zxf ~/arm-cs-tools-ubuntu-universal.tar.gz
-
-   - export PATH=~/pebble-dev/PebbleSDK-3.1/bin:$PATH
-
-script:
-   - echo "Building Pebble project..."
-   - cd ~/build/thunsaker/spoon
-   - pebble build
-compiler: gcc
+language: pebblec
+sudo: false
+before_script: bash ./before_install.sh
+script: bash ./build.sh
+cache:
+  directories:
+    - $HOME/pebble-dev
+    - $HOME/.cache/pip
+addons:
+  apt:
+    packages:
+    - python2.7-dev
+    - python-pip
+    - python-virtualenv

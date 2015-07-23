@@ -1,0 +1,27 @@
+{
+  "name": "spoon-config",
+  "version": "2.0.0",
+  "description": "Configuration page Spoon, a Pebble watchapp for Foursquare.",
+  "main": "index.html",
+  "scripts": {
+    "build": "gulp build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thunsaker/spoon.git"
+  },
+  "author": "Thomas Hunsaker (@thunsaker)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thunsaker/spoon/issues"
+  },
+  "homepage": "https://github.com/thunsaker/spoon#readme",
+  "devDependencies": {
+    "bower": "^1.4.1",
+    "del": "^1.2.0",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-jade": "^1.0.1",
+    "gulp-stylus": "^2.0.5"
+  }
+}

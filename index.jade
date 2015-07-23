@@ -2,6 +2,22 @@ doctype html
 html(lang="en")
     head
         title Spoon Config
+        link(rel="stylesheet", href="css/slate.min.css")
     body
-        h1 Spoon Config
-        p Welcome to Spoon!
+        .item-container
+            .item-container-header Welcome to Spoon!
+            .item-container-content
+                .item 
+                    p Get connected to Foursquare and change your theme below.
+        .item-container
+            .button-container
+                img(src='img/foursquare-connect.png')
+        .item-container
+            .item-container-header Select Theme
+            .item-container-content
+                .item Text under the header...and more text..and such.
+        .item-container
+            .button-container
+                button.item-button SAVE SETTINGS
+
+    script(src="js/slate.min.js")

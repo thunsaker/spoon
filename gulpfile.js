@@ -39,13 +39,14 @@ gulp.task('copy', function() {
         .pipe(gulp.dest('./dist/fonts'));
     // js
     gulp.src([
-            'bower_components/pebble-slate/dist/js/slate.min.js'
+            'bower_components/pebble-slate/dist/js/slate.min.js',
+            'bower_components/material-design-lite/material.min.js'
         ])
         .pipe(gulp.dest('./dist/js'));
 
     // img
     gulp.src([
-            'img/*.png'
+            'img/*.*'
         ])
         .pipe(gulp.dest('./dist/img'));
 });

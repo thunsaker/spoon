@@ -1,0 +1,21 @@
+{
+  "name": "Spoon",
+  "version": "2.0.0",
+  "homepage": "https://github.com/thunsaker/spoon",
+  "authors": [
+    "Thomas Hunsaker <thomas.hunsaker@gmail.com>"
+  ],
+  "description": "Spoon watchapp for Pebble",
+  "main": "config.html",
+  "keywords": [
+    "spoon",
+    "pebble",
+    "foursquare",
+    "watchapp"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "pebble-slate": "~0.0.1",
+    "material-design-lite": "~1.0.1"
+  }
+}

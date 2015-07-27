@@ -2,40 +2,64 @@ doctype html
 html(lang='en')
     head
         title Spoon Config
-        meta(content='width=device-width, initial-scale=1.0, maximum-scale=1.0', name='viewport')
-        link(rel='stylesheet', href='css/site.css')
-        link(rel='stylesheet', href='css/slate.min.css')
+        meta(charset='utf-8')
+        meta(http-equiv='X-UA-Compatible' content='IE=edge')
+        meta(name='description' content='Spoon is a simple Foursquare check-in app for Pebble.')
+        meta(name='viewport' content='width=device-width, initial-scale=1')
+
+        //- Android
+        meta(name='mobile-web-app-capable' content='yes')
+        link(rel='icon' sizes='144x144' href='img/spoon_2_app_icon.png')
+
+        link(href='https://fonts.googleapis.com/css?family=Roboto:regular,bold,italic,thin,light,bolditalic,black,medium&amp;lang=en' rel='stylesheet')
+        link(href='https://fonts.googleapis.com/icon?family=Material+Icons' rel='stylesheet')
+        link(rel='stylesheet' href='https://storage.googleapis.com/code.getmdl.io/1.0.1/material.light_green-orange.min.css')
+        link(rel='stylesheet' href='css/site.css')
     body
-        form(id='config-form')
-            .item-container
-                .item-container-content
-                    .item 
-                        p Get connected to Foursquare and change your theme below.
-                    .button-container.bottom-padding
-                        img(src='img/foursquare-connect.png')
-            .item-container
-                .item-container-header Theme
-                .item-container-content
-                    label.item Teal / Pink
-                        input.item-radio(type='radio', name='radio-theme', value='0', checked)
-                    label.item Orange / Green
-                        input.item-radio(type='radio', name='radio-theme', value='1')
-                    label.item Pink / Blue
-                        input.item-radio(type='radio', name='radio-theme', value='2')
-                    label.item Purple / Yellow
-                        input.item-radio(type='radio', name='radio-theme', value='3')
-                    label.item Classic (Black / White)
-                        input.item-radio(type='radio', name='radio-theme', value='4')
-
-            .item-container
-                .item-container-header Distance Units
-                .item-container-content
-                    .item.tab-buttons
-                        a.tab-button.active(name='tab-1') Miles (mi)
-                        a.tab-button(name='tab-1') Kilometers (km)
-
-            .item-container
-                .button-container
-                    button.item-button SAVE SETTINGS
-
-    script(src='js/slate.min.js')
+        .layout-transparent.mdl-color--primary.mdl-layout.mdl-js-layout
+            header.mdl-layout__header.mdl-layout__header--transparent
+                .mdl-layout__header-row
+                    span.mdl-layout-title
+                        img(src='img/honey_spoon_subdued.png')
+                    .mdl-layout-spacer
+                    nav.mdl-navigation
+                        a.mdl-navigation__link(href='https://github.com/thunsaker/spoon/')
+                            i.material-icons link
+                            | Source
+            .mdl-layout__drawer
+                span.mdl-layout-title Spoon
+                nav.mdl-navigation.mdl-color-text--blue-grey-400
+                    a.mdl-navigation__link(href='https://github.com/thunsaker/spoon/zipball/master')
+                        i.material-icons file_download
+                        | Zip
+                    a.mdl-navigation__link(href='https://github.com/thunsaker/spoon/tarball/master')
+                        i.material-icons file_download
+                        | Tarball
+                    a.mdl-navigation__link(href='https://github.com/thunsaker/spoon/')
+                        i.material-icons link
+                        | Source
+                    a.mdl-navigation__link(href='http://pblweb.com/appstore/52b2088505c0467ea900004f/')
+                        i.material-icons watch
+                        | Install
+            main.mdl-layout__content
+                .mdl-grid.card-spacing
+                    .mdl-cell.mdl-cell--2-col.mdl-cell--hide-tablet.mdl-cell--hide-phone
+                    .mdl-card.mdl-shadow--8dp.card-wide.mdl-cell--8-col
+                        .mdl-card__title
+                            h2.mdl-card__title-text Spoon!
+                        //- button.mdl-button.mdl-js-button.mdl-button--fab.mdl-js-ripple-effect.mdl-color--accent.fab-install
+                        //-     i.material-icons
+                        //-       watch
+                        .mdl-card__supporting-text.top-padding
+                            | Spoon is a simple Foursquare check-in app for Pebble. The watchapp lists nearby venues using your phone's location. Pick a venue and check-in. All from your wrist.
+                            ul
+                                li
+                                    Share to Facebook/Twitter
+                                li
+                                    Auto-Close After Checkin
+                                li
+                                    Long-press from venue list for an even faster checkin
+                            p
+                                a(href='http://pblweb.com/appstore/52b2088505c0467ea900004f/')
+                                    img(src='http://dev.pblweb.com/badge/52b2088505c0467ea900004f/black/medium/')
+    script(src='js/material.min.js')

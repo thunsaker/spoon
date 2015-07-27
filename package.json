@@ -1,5 +1,5 @@
 {
-  "name": "spoon-config",
+  "name": "Spoon",
   "version": "2.0.0",
   "description": "Configuration page Spoon, a Pebble watchapp for Foursquare.",
   "main": "index.html",

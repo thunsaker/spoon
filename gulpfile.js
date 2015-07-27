@@ -2,7 +2,8 @@ var gulp = require('gulp'),
     jade = require('gulp-jade'),
     stylus = require('gulp-stylus'),
     del = require('del'),
-    livereload = require('gulp-livereload');
+    livereload = require('gulp-livereload'),
+    ghPages = require('gulp-gh-pages');
 
 gulp.task('default', ['clean'], function() {
     gulp.start('render','copy');
@@ -57,4 +58,9 @@ gulp.task('watch', ['default'], function() {
 
     livereload.listen();
     gulp.watch(['.dist/**']).on('change', livereload.changed);
+});
+
+gulp.task('deploy',['default'], function() {
+    return gulp.src('./dist/**/*')
+                .pipe(ghPages());
 });

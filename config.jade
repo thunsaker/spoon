@@ -5,15 +5,16 @@ html(lang='en')
         meta(content='width=device-width, initial-scale=1.0, maximum-scale=1.0', name='viewport')
         link(rel='stylesheet', href='css/config.css')
         link(rel='stylesheet', href='css/slate.min.css')
-    body
+    body.center
         form(id='config-form')
             .item-container
                 .item-container-content
                     .item 
                         p Get connected to Foursquare and change your theme below.
-                    .button-container.bottom-margin
-                        img(src='img/foursquare-connect.png')
-            .item-container
+                    div.bottom-margin
+                        a.button-container.bottom-margin(href='callback.html')
+                            img(src='img/foursquare-connect.png')
+            .item-container.left
                 .item-container-header Theme
                 .item-container-content
                     label.item Teal / Pink
@@ -27,7 +28,7 @@ html(lang='en')
                     label.item Classic (Black / White)
                         input.item-radio(type='radio', name='radio-theme', value='4')
 
-            .item-container
+            .item-container.left
                 .item-container-header Distance Units
                 .item-container-content
                     .item.tab-buttons

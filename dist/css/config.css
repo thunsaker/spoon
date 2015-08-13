@@ -27,3 +27,24 @@
 .right {
   text-align: right;
 }
+.alert-background {
+  background-color: rgba(255,71,0,0.5);
+  color: #fff;
+  padding: 10px;
+}
+.error-background {
+  background-color: rgba(255,0,0,0.5);
+  color: #fff;
+  padding: 10px;
+}
+.success-background {
+  background-color: rgba(0,128,0,0.5);
+  color: #fff;
+  padding: 10px;
+}
+.hide {
+  display: none;
+}
+.show {
+  display: block;
+}

@@ -27,7 +27,7 @@ gulp.task('stylus', function() {
         .pipe(gulp.dest('./dist/css/'));
 });
 
-gulp.task('copy', function() {
+gulp.task('copy', ['copy-js'], function() {
     // css
     gulp.src([
             'bower_components/pebble-slate/dist/css/slate.min.css'
@@ -38,12 +38,6 @@ gulp.task('copy', function() {
             'bower_components/pebble-slate/dist/fonts/*'
         ])
         .pipe(gulp.dest('./dist/fonts'));
-    // js
-    gulp.src([
-            'bower_components/pebble-slate/dist/js/slate.min.js',
-            'bower_components/material-design-lite/material.min.js'
-        ])
-        .pipe(gulp.dest('./dist/js'));
 
     // img
     gulp.src([
@@ -52,9 +46,20 @@ gulp.task('copy', function() {
         .pipe(gulp.dest('./dist/img'));
 });
 
+gulp.task('copy-js', function() {
+    // js
+    gulp.src([
+            'bower_components/pebble-slate/dist/js/slate.min.js',
+            'bower_components/material-design-lite/material.min.js',
+            'js/*.js'
+        ])
+        .pipe(gulp.dest('./dist/js'));
+});
+
 gulp.task('watch', ['default'], function() {
     gulp.watch('*.jade', ['jade']);
     gulp.watch('css/*.styl', ['stylus']);
+    gulp.watch('js/*.js', ['copy-js']);
 
     livereload.listen();
     gulp.watch(['.dist/**']).on('change', livereload.changed);

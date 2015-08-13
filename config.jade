@@ -6,37 +6,46 @@ html(lang='en')
         link(rel='stylesheet', href='css/config.css')
         link(rel='stylesheet', href='css/slate.min.css')
     body.center
-        form(id='config-form')
-            .item-container
-                .item-container-content
-                    .item 
-                        p Get connected to Foursquare and change your theme below.
-                    div.bottom-margin
-                        a.button-container.bottom-margin(href='callback.html')
-                            img(src='img/foursquare-connect.png')
-            .item-container.left
-                .item-container-header Theme
-                .item-container-content
-                    label.item Teal / Pink
-                        input.item-radio(type='radio', name='radio-theme', value='0', checked)
-                    label.item Orange / Green
-                        input.item-radio(type='radio', name='radio-theme', value='1')
-                    label.item Pink / Blue
-                        input.item-radio(type='radio', name='radio-theme', value='2')
-                    label.item Purple / Yellow
-                        input.item-radio(type='radio', name='radio-theme', value='3')
-                    label.item Classic (Black / White)
-                        input.item-radio(type='radio', name='radio-theme', value='4')
+        .item-container
+            .item-container-content
+                .item 
+                    p Get connected to Foursquare and change your theme below.
+                div.bottom-margin
+                    a.button-container.bottom-margin(id='config-connect-button' 
+                        href='https://foursquare.com/oauth2/authorize?client_id=XVCTS2NLOT3D24JHQBM40MZGWQD1SR5VJMIBXQY2AYQ3WVYC&response_type=token&redirect_uri=https://thunsaker.github.io/spoon/callback.html')
+                        img(src='img/foursquare-connect.png')
+                    p.success-background.hide(id='config-connect-info')
+                        | Connected! Save settings below to start using Spoon!
+                p.bottom-margin.alert-background.hide(id='config-connect-error')
+                    | Authorizing Foursquare failed. :( Try again.
+        // .item-container.left
+        //     .item-container-header Theme
+        //     .item-container-content
+        //         label.item Green / Pink
+        //             input.item-radio(type='radio', name='radio-theme', value='0', checked)
+        //         label.item Orange / Green
+        //             input.item-radio(type='radio', name='radio-theme', value='1')
+        //         label.item Pink / Blue
+        //             input.item-radio(type='radio', name='radio-theme', value='2')
+        //         label.item Yellow / Purple
+        //             input.item-radio(type='radio', name='radio-theme', value='3')
+        //         label.item Blue / Orange
+        //             input.item-radio(type='radio', name='radio-theme', value='4')
+        //         label.item Classic (Black / White)
+        //             input.item-radio(type='radio', name='radio-theme', value='5')
 
-            .item-container.left
-                .item-container-header Distance Units
-                .item-container-content
-                    .item.tab-buttons
-                        a.tab-button.active(name='tab-1') Miles (mi)
-                        a.tab-button(name='tab-1') Kilometers (km)
+        // .item-container.left
+        //     .item-container-header Distance Units
+        //     .item-container-content
+        //         .item.tab-buttons
+        //             a.tab-button.active(name='tab-units') Kilometers (km)
+        //             a.tab-button(name='tab-units') Miles (mi)
 
-            .item-container
-                .button-container
-                    button.item-button SAVE SETTINGS
+        // .item-container
+        //     .button-container
+        //         button.item-button(id='btn-save') SAVE SETTINGS
 
     script(src='js/slate.min.js')
+    // script(src='js/config.min.js')
+    script(src='js/token.js')
+    script(src='js/config.js')

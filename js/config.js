@@ -25,6 +25,6 @@ $(document).ready(function() {
         var unit = unitValue.substr(unitValue.length - 3, 1);
         config.unit = unit == 'k' ? 0 : 1;
         
-        window.location.replace(redirectUrl + '#' + JSON.stringify(config);
+        window.location.replace(redirectUrl + '#' + JSON.stringify(config));
     });
 });

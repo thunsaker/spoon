@@ -10,5 +10,5 @@ $(document).ready(function() {
     var token = {};
     config.token = result;
 
-    window.location.href = redirectUrl + "#" + JSON.stringify(config));
+    window.location.href = redirectUrl + "#" + JSON.stringify(config);
 });

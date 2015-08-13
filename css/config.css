@@ -1,0 +1,50 @@
+.bottom-margin {
+  margin-bottom: 15px;
+}
+@font-face {
+  font-family: 'PF DinDisplay Pro';
+  src: url("../fonts/pfdindisplaypro-regular.woff") format('woff');
+}
+@font-face {
+  font-family: 'PT Sans';
+  src: url("../fonts/ptsans-regular.woff") format('woff');
+}
+.progress {
+  margin: 10px auto;
+  height: 11px;
+  width: 43px;
+  background: url("../img/slate-progress-orange.gif") center;
+}
+.progress.blue {
+  background: url("../img/slate-progress-blue.gif") center;
+}
+.center {
+  text-align: center;
+}
+.left {
+  text-align: left;
+}
+.right {
+  text-align: right;
+}
+.alert-background {
+  background-color: rgba(255,71,0,0.5);
+  color: #fff;
+  padding: 10px;
+}
+.error-background {
+  background-color: rgba(255,0,0,0.5);
+  color: #fff;
+  padding: 10px;
+}
+.success-background {
+  background-color: rgba(0,128,0,0.5);
+  color: #fff;
+  padding: 10px;
+}
+.hide {
+  display: none;
+}
+.show {
+  display: block;
+}

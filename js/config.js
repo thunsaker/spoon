@@ -15,16 +15,20 @@ $(document).ready(function() {
 
     var redirectUrl = "pebblejs://close";
     
-    $('#btn-save').click(function() {
-        config.token = token;
+    // TODO: Remove this once I finish doing the config stuff
+    config.token = token;
+    window.location.replace(redirectUrl + '#' + JSON.stringify(config));
 
-        var theme = $("[name='radio-theme']:checked").val();
-        config.theme = +theme;
+    // $('#btn-save').click(function() {
+    //     config.token = token;
 
-        var unitValue = $("[name='tab-units'].active").text();
-        var unit = unitValue.substr(unitValue.length - 3, 1);
-        config.unit = unit == 'k' ? 0 : 1;
+    //     var theme = $("[name='radio-theme']:checked").val();
+    //     config.theme = +theme;
+
+    //     var unitValue = $("[name='tab-units'].active").text();
+    //     var unit = unitValue.substr(unitValue.length - 3, 1);
+    //     config.unit = unit == 'k' ? 0 : 1;
         
-        window.location.replace(redirectUrl + '#' + JSON.stringify(config));
-    });
+    //     window.location.replace(redirectUrl + '#' + JSON.stringify(config));
+    // });
 });

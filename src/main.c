@@ -11,6 +11,7 @@
 #include "libs/math-utils.h"
 #include "common.h"
 #include "dialog_window.h"
+#include "config.h"
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
@@ -42,6 +43,11 @@ static TextLayer *text_layer_primary;
 static TextLayer *text_layer_primary_address;
 static Layer *layer_primary_circle;
 static MenuLayer *layer_menu_venues;
+static TextLayer *text_layer_last_checkin_title;
+static TextLayer *text_layer_last_checkin_venue;
+static TextLayer *text_layer_last_checkin_address;
+static TextLayer *text_layer_last_checkin_date;
+static Layer *layer_last_checkin;
 
 #ifdef PBL_COLOR
 	static uint8_t primary_color;
@@ -63,6 +69,8 @@ static int circle_radius_count = 1;
 AppTimer *circle_grow_timer;
 static bool reverse_menu_animation;
 static bool menu_mode;
+static bool reverse_last_animation;
+static bool last_mode;
 static bool no_foursquare;
 static bool no_internet;
 static int up_count = 0;
@@ -73,8 +81,8 @@ static const GPathInfo CHECK_PATH_POINTS = {
 	(GPoint []) {{104,78},{101,83},{109,93},{124,73},{121,68},{109,85},{104,78}}
 };
 
-static PropertyAnimation *s_bounce_animation;
-static int s_bounce_current_stage = 0;
+static PropertyAnimation *s_drop_current_animation;
+static PropertyAnimation *s_drop_last_animation;
 
 static PropertyAnimation *s_transition_box_animation;
 static PropertyAnimation *s_transition_text_1_animation;
@@ -103,53 +111,7 @@ static void getListOfLocations() {
 	app_message_outbox_send();
 }
 
-static void bounce_animation();
-
-static void bounce_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
-	#ifdef PBL_PLATFORM_APLITE
-  		// Free the animation
-  		property_animation_destroy(s_bounce_animation);
-	#endif
-
-  	// Schedule the next one, unless the app is exiting
-  	if (finished || s_bounce_current_stage == 1) {
-		bounce_animation();
-	}
-}
-
-static void bounce_animation() {
-  // Determine start and finish positions
-	GRect start, finish;
-  	switch (s_bounce_current_stage) {
-		case 0:
-		  	start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
-		  	finish = GRect(0, 94 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT + 10);
-		  	break;
-		case 1:
-		  	start = GRect(0, 94 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT + 10);
-		  	finish = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
-		  	break;
-		default:
-			start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
-		  	finish = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);			
-		  	break;
-	}
-
-	if(s_bounce_current_stage < 2) {
-		// Schedule the next animation
-		s_bounce_animation = property_animation_create_layer_frame(layer_primary_back, &start, &finish);
-		animation_set_duration((Animation*)s_bounce_animation, ANIM_DURATION);
-		animation_set_delay((Animation*)s_bounce_animation, ANIM_DELAY);
-		animation_set_curve((Animation*)s_bounce_animation, AnimationCurveEaseInOut);
-		animation_set_handlers((Animation*)s_bounce_animation, (AnimationHandlers) {
-			.stopped = bounce_anim_stopped_handler
-		}, NULL);
-		animation_schedule((Animation*)s_bounce_animation);
-
-		// Increment stage and wrap
-		s_bounce_current_stage = (s_bounce_current_stage + 1) % 3;
-	}
-}
+static void last_checkin_show();
 
 static void transition_circle_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
 	#ifdef PBL_PLATFORM_APLITE
@@ -159,9 +121,80 @@ static void transition_circle_anim_stopped_handler(Animation *animation, bool fi
 		property_animation_destroy(s_transition_text_2_animation);
 	#endif
 
-	drop_and_shrink = !reverse_menu_animation;
+	//drop_and_shrink = !reverse_menu_animation;
 	layer_mark_dirty(layer_primary_circle);
-	reverse_menu_animation = false;
+	if(!last_mode) {
+		reverse_menu_animation = false;
+	}
+}
+
+static void last_checkin_drop_current_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_PLATFORM_APLITE
+  		property_animation_destroy(s_drop_current_animation);
+	#endif
+}
+
+static void last_checkin_drop_last_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_PLATFORM_APLITE
+  		property_animation_destroy(s_drop_last_animation);
+	#endif
+}
+
+static void last_checkin_show() {
+	GRect box_start, box_finish;
+	GRect last_start, last_finish;
+	GRect fab_start, fab_finish;
+	
+	box_start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
+	box_finish = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, BOX_HEIGHT + 10);
+	last_start = GRect(0, 0 - SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
+	last_finish = GRect(0, 20 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	fab_start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
+	fab_finish =  GRect(-94, -45 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
+	
+	if(reverse_last_animation) {
+		last_mode = false;
+	} else {
+		last_mode = true;
+	}
+	
+	// Drop Current Venue
+	s_drop_current_animation = reverse_last_animation 
+		? property_animation_create_layer_frame(layer_primary_back, &box_finish, &box_start)
+		: property_animation_create_layer_frame(layer_primary_back, &box_start, &box_finish);
+	animation_set_duration((Animation*)s_drop_current_animation, ANIM_DURATION);
+	animation_set_delay((Animation*)s_drop_current_animation, ANIM_DELAY);
+	animation_set_curve((Animation*)s_drop_current_animation, AnimationCurveEaseOut);
+	animation_set_handlers((Animation*)s_drop_current_animation, (AnimationHandlers) {
+		.stopped = last_checkin_drop_current_stopped_handler
+	}, NULL);
+	animation_schedule((Animation*)s_drop_current_animation);
+
+	// Drop Last Checkin
+	s_drop_last_animation = reverse_last_animation
+		? property_animation_create_layer_frame(layer_last_checkin, &last_finish, &last_start)
+		: property_animation_create_layer_frame(layer_last_checkin, &last_start, &last_finish);
+	animation_set_duration((Animation*)s_drop_last_animation, ANIM_DURATION);
+	animation_set_delay((Animation*)s_drop_last_animation, ANIM_DELAY);
+	animation_set_curve((Animation*)s_drop_last_animation, AnimationCurveEaseIn);
+	animation_set_handlers((Animation*)s_drop_last_animation, (AnimationHandlers) {
+		.stopped = last_checkin_drop_last_stopped_handler
+	}, NULL);
+	animation_schedule((Animation*)s_drop_last_animation);
+	
+	drop_and_shrink = last_mode;
+	
+	// FAB
+	s_transition_circle_animation = reverse_last_animation
+		? property_animation_create_layer_frame(layer_primary_circle, &fab_finish, &fab_start)
+		: property_animation_create_layer_frame(layer_primary_circle, &fab_start, &fab_finish);
+	Animation *anim_slide_circle = 
+		property_animation_get_animation(s_transition_circle_animation);
+	animation_set_duration(anim_slide_circle, 500);
+	animation_set_handlers((Animation*)s_transition_circle_animation, (AnimationHandlers) {
+		.stopped = transition_circle_anim_stopped_handler
+	}, NULL);
+	animation_schedule(anim_slide_circle);
 }
 
 static void transition_menu_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
@@ -189,15 +222,11 @@ static void transition_animation() {
 	
 	// FAB
 	start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
-	//finish = GRect(-94, -43, SCREEN_WIDTH, 168); Inline with first item
 	finish = GRect(0, 144, SCREEN_WIDTH, 168);
-	if(reverse_menu_animation) {
-		s_transition_circle_animation = 
-			property_animation_create_layer_frame(layer_primary_circle, &finish, &start);
-	} else {
-		s_transition_circle_animation = 
-			property_animation_create_layer_frame(layer_primary_circle, &start, &finish);
-	}
+	s_transition_circle_animation = reverse_menu_animation
+		? property_animation_create_layer_frame(layer_primary_circle, &finish, &start)
+		: property_animation_create_layer_frame(layer_primary_circle, &start, &finish);
+
 	Animation *anim_slide_circle = 
 		property_animation_get_animation(s_transition_circle_animation);
 	animation_set_duration(anim_slide_circle, 500);
@@ -207,7 +236,6 @@ static void transition_animation() {
 	animation_schedule(anim_slide_circle);
 	
 	// Text 1
-	//start = GRect(10, 94, SCREEN_WIDTH, 74);
 	start = GRect(10, 10, 124, 50);
 	finish = GRect(10, 15, 102, 24);
 	if(reverse_menu_animation) {
@@ -229,7 +257,6 @@ static void transition_animation() {
 	text_layer_set_text(text_layer_primary, venues[0].name);
 	
 	// Text 2
-	//start = GRect(10, 144, SCREEN_WIDTH, 20);
 	start = GRect(10, 60, 124, 20);
 	finish = GRect(10, 39, 102, 20);
 	if(reverse_menu_animation) {
@@ -302,14 +329,18 @@ static void up_single_click_handler(ClickRecognizerRef recognizer, void *context
 				transition_animation();
 			}
 			menu_layer_set_selected_next(layer_menu_venues, true, MenuRowAlignCenter, true);
-		} else {
-			// Start animation loop
-			s_bounce_current_stage = 0;
-			bounce_animation();
+		} else if(last_mode) {
 			up_count++;
 			if(up_count == 2) {
 				getListOfLocations();
+				// Return to venue list
+				reverse_last_animation = true;
+				last_checkin_show();
 			}
+			// TODO: Add bounce anim
+		} else {
+			reverse_last_animation = false;
+			last_checkin_show();
 		}
 	}
 }
@@ -319,6 +350,9 @@ static void down_single_click_handler(ClickRecognizerRef recognizer, void *conte
 	} else {
 		if(menu_mode) {
 			menu_layer_set_selected_next(layer_menu_venues, false, MenuRowAlignCenter, true);
+		} else if(last_mode) {
+			reverse_last_animation = true;
+			last_checkin_show();
 		} else {
 			up_count = 0;
 			reverse_menu_animation = false;
@@ -339,6 +373,9 @@ static void select_single_click_handler(ClickRecognizerRef recognizer, void *con
 				strncpy(venuename, venues[selectedIndex].name, sizeof(venuename));
 				checkin_menu_show(menu_mode, venueid, venuename);
 			}
+		} else if(last_mode) {
+			// TODO: Decide IF I want the user to have some action here
+			// Do nothing
 		} else {
 			strncpy(venueid, venues[0].id, sizeof(venueid));
 			strncpy(venuename, venues[0].name, sizeof(venuename));
@@ -409,15 +446,19 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 	} else if(drop_and_shrink) {
 		#if PBL_COLOR
 			graphics_context_set_fill_color(ctx, (GColor)accent_color);
+			graphics_context_set_stroke_width(ctx, 5);
 		#else
 			graphics_context_set_fill_color(ctx, GColorBlack);
 		#endif
 		graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS_MINI);
+		
+		graphics_context_set_stroke_color(ctx, GColorWhite);
+		graphics_draw_line(ctx, GPoint(105,81), GPoint(111,86));
+		graphics_draw_line(ctx, GPoint(111,86), GPoint(120,75));
 	} else {
 		#ifdef PBL_COLOR
 			// Shadow
 			draw_twenty_percent_circle(ctx, 115, 85, DEFAULT_CIRCLE_RADIUS + 2, GColorClear, GColorDarkGray);
-		
 			graphics_context_set_fill_color(ctx, (GColor)accent_color);
 		#else
 			graphics_context_set_fill_color(ctx, GColorBlack);
@@ -491,17 +532,39 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 	}
 }
 
+#ifdef PBL_COLOR
+static void setup_theme_colors(int theme_id) {
+	switch(theme_id) {
+		case 1:
+		colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
+		break;
+		case 2:
+		colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
+		break;
+		case 3:
+		colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
+		break;
+		case 4:
+		colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
+		break;
+		case 5:
+		colors_init(GColorDarkGray.argb, GColorBlack.argb, GColorWhite.argb);
+		break;
+		default:
+		colors_init(GColorJaegerGreen.argb, GColorFolly.argb, GColorWhite.argb);
+		break;
+	}
+	window_set_background_color(s_main_window, (GColor)back_color);
+}
+#endif
+
 static void window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 
 	GRect bounds = layer_get_frame(window_layer);
 	
 	#ifdef PBL_COLOR
-		// TODO: Allow theme selection from config screen?
-		colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
-		//colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
-		//colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
-		//colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
+		setup_theme_colors(config_get_theme());
 	#endif
 	
 	// Background
@@ -525,6 +588,41 @@ static void window_load(Window *window) {
 		// TODO: Show image from the first venue, maybe
 		start_transitioning_rect(layer_back, 100, 1);
 	#endif
+		
+	// Last Checkin
+	layer_last_checkin = layer_create(GRect(0,0-bounds.size.h, bounds.size.w, bounds.size.h));
+	
+	// Title
+	text_layer_last_checkin_title = text_layer_create(GRect(40,7,bounds.size.w,20));
+	text_layer_set_text_color(text_layer_last_checkin_title, GColorBlack);
+	text_layer_set_background_color(text_layer_last_checkin_title, GColorClear);
+	text_layer_set_font(text_layer_last_checkin_title, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+	text_layer_set_text_alignment(text_layer_last_checkin_title, GTextAlignmentLeft);
+	text_layer_set_text(text_layer_last_checkin_title, "Last Check-In");
+	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_title));
+	
+	// Venue
+	text_layer_last_checkin_venue = text_layer_create(GRect(10,40,bounds.size.w-10,74));
+	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
+	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
+	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_text_alignment(text_layer_last_checkin_venue, GTextAlignmentLeft);
+	text_layer_set_text(text_layer_last_checkin_venue, "Venue Name");
+	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
+	
+	text_layer_last_checkin_date = text_layer_create(GRect(10,124,bounds.size.w,20));
+	text_layer_set_text_color(text_layer_last_checkin_date, GColorBlack);
+	text_layer_set_background_color(text_layer_last_checkin_date, GColorClear);
+	text_layer_set_font(text_layer_last_checkin_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+	text_layer_set_text_alignment(text_layer_last_checkin_date, GTextAlignmentLeft);
+
+	text_layer_set_text(text_layer_last_checkin_date, "at sometime...");
+	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_date));
+	
+	// TODO: Not sure about address placement here...
+	//layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_address));
+	
+	layer_add_child(window_layer, layer_last_checkin);
 	
 	// Menu
 	layer_menu_venues = menu_layer_create(
@@ -644,9 +742,17 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
 	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
 	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
+	Tuple *text_tuple_config = dict_find(iter, SPOON_CONFIG);
 	
 	if(text_tuple_error) {
 		text_layer_set_text(text_layer_primary, text_tuple_error->value->cstring);
+	} else if(text_tuple_config) {
+		#ifdef PBL_COLOR
+			int config = text_tuple_config->value->int16;
+			config_init(config);
+			persist_write_int(KEY_THEME, config);
+			setup_theme_colors(config);
+		#endif
 	} else if(text_tuple_ready) {
 		if(!no_foursquare) {
 			getListOfLocations();
@@ -658,47 +764,49 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		char key_stored[50];
 		persist_read_string(KEY_TOKEN, key_stored, sizeof(key_stored));
 		no_foursquare = false;
-		getListOfLocations();
 	} else if(text_tuple_result) {
 		checkin_result_receiver((bool)text_tuple_result->value->int16);
 	} else if(!text_tuple_token) {
 		int index = dict_find(iter, SPOON_INDEX)->value->int16;
-		if(index && text_tuple_name) {
+		if(text_tuple_name) {
 			SpoonVenue venue;
-			venue.index = index - 1;
+			venue.index = index;
 			strncpy(venue.id, text_tuple_id->value->cstring, sizeof(venue.id));
 			strncpy(venue.name, text_tuple_name->value->cstring, sizeof(venue.name));
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
 			if(text_tuple_address) {
 				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
 			} else {
 				strncpy(venue.address, "-", sizeof(venue.address));
 			}
-
-			/*
-			// TODO: Restore last venue checkin somehow
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
 			if(index == 0) {
 				venue.isRecent = true;
 			} else {
 				venue.isRecent = false;
 			}
-			*/
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
 			venues[venue.index] = venue;
 			num_venues++;
 			
-			//APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
 			
-			if(venue.index == 0) {
+			if(venue.isRecent) {
+				text_layer_set_text(text_layer_last_checkin_venue, venues[0].name);
+				// HACK: Using the address field for date here
+ 				text_layer_set_text(text_layer_last_checkin_date, venues[0].address);
+			}
+			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
+			if(venue.index == 1) {
 				text_layer_set_size(text_layer_primary, GSize(124,50));
-				text_layer_set_text(text_layer_primary, venues[0].name);
-				text_layer_set_text(text_layer_primary_address, venues[0].address);
+				text_layer_set_text(text_layer_primary, venues[1].name);
+				text_layer_set_text(text_layer_primary_address, venues[1].address);
 				layer_mark_dirty(text_layer_get_layer(text_layer_primary));
 				layer_mark_dirty(layer_primary_back);
 			}
 			menu_layer_reload_data_and_mark_dirty(layer_menu_venues);
 			
 			if(index == MAX_VENUES - 1) {
-				// TODO: For when I put the last venue back in place
-				//menu_layer_set_selected_index(layer_menu_venues, MenuIndex(0,1), MenuRowAlignCenter, false);
 				vibes_short_pulse();
 			}
 		}
@@ -734,6 +842,11 @@ static void init(void) {
 
 static void deinit(void) {
   	animation_unschedule_all();
+	text_layer_destroy(text_layer_last_checkin_title);
+	text_layer_destroy(text_layer_last_checkin_venue);
+	text_layer_destroy(text_layer_last_checkin_address);
+	text_layer_destroy(text_layer_last_checkin_date);
+	layer_destroy(layer_last_checkin);
 	text_layer_destroy(text_layer_primary);
 	text_layer_destroy(text_layer_primary_address);
 	layer_destroy(layer_primary_back);

@@ -1,11 +1,11 @@
 {
     "appKeys": {
         "address": 5,
+        "config": 12,
         "error": 11,
         "facebook": 10,
         "id": 3,
         "index": 2,
-        "last": 12,
         "location": 1,
         "name": 4,
         "private": 8,
@@ -26,24 +26,24 @@
     "resources": {
         "media": [
             {
-                "file": "images/foursquare_cog.png",
-                "name": "IMAGE_COG",
-                "type": "png"
-            },
-            {
                 "file": "images/spoon_2_menu_icon.png",
                 "menuIcon": true,
                 "name": "IMAGE_MENU",
                 "type": "png"
             },
             {
-                "file": "images/check_white.png",
-                "name": "IMAGE_CHECK_ON",
+                "file": "images/foursquare_cog.png",
+                "name": "IMAGE_COG",
                 "type": "png"
             },
             {
                 "file": "images/warning_white.png",
                 "name": "IMAGE_WARNING",
+                "type": "png"
+            },
+            {
+                "file": "images/check_white.png",
+                "name": "IMAGE_CHECK_ON",
                 "type": "png"
             },
             {
@@ -60,7 +60,7 @@
         "basalt"
     ],
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
-    "versionLabel": "2.0",
+    "versionLabel": "2.01",
     "watchapp": {
         "watchface": false
     }

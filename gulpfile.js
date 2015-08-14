@@ -3,9 +3,19 @@ var gulp = require('gulp'),
     stylus = require('gulp-stylus'),
     del = require('del'),
     livereload = require('gulp-livereload'),
+    gutil = require('gulp-util'),
     ghPages = require('gulp-gh-pages');
+    
+var debug = false;
+
+gulp.task('debug', function() {
+    debug = true;
+    gutil.log(gutil.colors.green('Running in DEBUG!'));
+    gulp.start('default');
+})
 
 gulp.task('default', ['clean'], function() {
+    debug = debug || false;
     gulp.start('render','copy');
 });
 
@@ -66,6 +76,7 @@ gulp.task('watch', ['default'], function() {
 });
 
 gulp.task('deploy',['default'], function() {
-    return gulp.src('./dist/**/*')
-                .pipe(ghPages());
+    debug = debug || false;
+    return gulp.src('dist/**/*')
+               .pipe(ghPages());
 });

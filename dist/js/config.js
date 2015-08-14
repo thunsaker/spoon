@@ -14,7 +14,7 @@ $(document).ready(function() {
     }
 
     var redirectUrl = "pebblejs://close";
-    
+
     $('#btn-save').click(function() {
         config.token = token;
 

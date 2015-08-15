@@ -9,6 +9,8 @@ $(document).ready(function() {
     var config = {};
     var token = {};
     config.token = result;
+    config.theme = 0;
+    config.unit = 0;
 
     window.location.href = redirectUrl + "#" + JSON.stringify(config);
 });

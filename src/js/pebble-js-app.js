@@ -10,7 +10,6 @@ var max_radius = 5000;
 var isNewList = false;
 var api_date = '20150612';
 var api_mode = '&m=swarm';
-var recentCheckinMessage = 'Last Check-in';
 var sending = false;
 var mToFeet = 3.2808;
 var ftInMile = 5280;
@@ -30,7 +29,7 @@ Pebble.addEventListener('showConfiguration',
 Pebble.addEventListener('webviewclosed',
 	function(e) {
 		var configuration = JSON.parse(e.response);
-		if(configuration.token.result === true) {
+		if(configuration.token !== null && configuration.token.result !== null && configuration.token.result === true) {
 			if(configuration.token.token.length > 0) {
 				localStorage.foursquare_token = configuration.token.token;
 				notifyPebbleConnected(localStorage.foursquare_token.toString());
@@ -41,11 +40,11 @@ Pebble.addEventListener('webviewclosed',
 			//Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
 		}
 		
-		if(configuration.theme !== null && configuration.theme.length > 0 && configuration.unit !== null) {
-			localStorage.spoon_theme = configuration.theme;
-			localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
-			notifyPebbleConfiguration(configuration.theme);
-		}
+// 		if(configuration.theme !== null && configuration.unit !== null) {
+// 			localStorage.spoon_theme = configuration.theme;
+// 			localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
+// 			notifyPebbleConfiguration(configuration.theme);
+// 		}
 	});
 
 function notifyPebbleConnected(token) {
@@ -67,7 +66,7 @@ var error = function(e) {
 };
 
 var success = function(position) {
-	var userToken = localStorage.foursquare_token.toString();
+ 	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {	
 		fetchMostRecentCheckin(userToken);
 		fetchClosestVenues(userToken, position);
@@ -87,7 +86,7 @@ function fetchClosestVenues(token, position) {
 					var response = JSON.parse(req.responseText);
 					venues = response.response.venues;
 					venues.forEach(function (element, index, array) {
-						var offsetIndex = index + 1;
+						var offsetIndex = index;
 						var venueId = element.id.replace('\'','');
 						var venueName = element.name.length >= 60 ? element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
 						var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20).trim() : element.location.address : '(No Address)';
@@ -105,8 +104,6 @@ function fetchClosestVenues(token, position) {
 						if(isNewList) {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
 							isNewList = false;
-						} else if(index == venues.length - 1) {
-							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
 						} else {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
 						}
@@ -159,7 +156,7 @@ function fetchMostRecentCheckin(token) {
 						var checkinString = checkinDate !== null ? 
 							"at " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString() 
 							: "Sometime in the past. :)";
-						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':0 }});
+						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
 					});
 				} else {
 					appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
@@ -202,7 +199,7 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-			console.log('Trying to send a message: ' + currentAppMessage.message.name);
+// 			console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {

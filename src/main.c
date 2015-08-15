@@ -26,6 +26,7 @@
 
 static SpoonVenue venues[MAX_VENUES];
 static int num_venues;
+static SpoonVenue lastCheckinVenue;
 static char error[128];
 static char venueid[128];
 static char venuename[512];
@@ -458,7 +459,7 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 	} else {
 		#ifdef PBL_COLOR
 			// Shadow
-			draw_twenty_percent_circle(ctx, 115, 85, DEFAULT_CIRCLE_RADIUS + 2, GColorClear, GColorDarkGray);
+			draw_twenty_percent_circle(ctx, 116, 83, DEFAULT_CIRCLE_RADIUS-1, GColorClear, GColorDarkGray);
 			graphics_context_set_fill_color(ctx, (GColor)accent_color);
 		#else
 			graphics_context_set_fill_color(ctx, GColorBlack);
@@ -693,7 +694,9 @@ static void window_load(Window *window) {
 			no_foursquare = false;
 		} else {
 			no_foursquare = true;
-			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+ 			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+// 			text_layer_set_text(text_layer_primary, "Mos Eisley Cantina");
+// 			text_layer_set_text(text_layer_primary_address, "24m - 7 Jawa Way");
 		}
 	} else {
 		no_internet = true;
@@ -773,34 +776,32 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			venue.index = index;
 			strncpy(venue.id, text_tuple_id->value->cstring, sizeof(venue.id));
 			strncpy(venue.name, text_tuple_name->value->cstring, sizeof(venue.name));
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
+
 			if(text_tuple_address) {
 				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
 			} else {
 				strncpy(venue.address, "-", sizeof(venue.address));
 			}
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
-			if(index == 0) {
+
+			if(index == -1) {
 				venue.isRecent = true;
+				lastCheckinVenue = venue;
+				
+				text_layer_set_text(text_layer_last_checkin_venue, lastCheckinVenue.name);
+				// HACK: Using the address field for date here
+ 				text_layer_set_text(text_layer_last_checkin_date, lastCheckinVenue.address);
 			} else {
 				venue.isRecent = false;
+				venues[venue.index] = venue;
+				num_venues++;
 			}
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
-			venues[venue.index] = venue;
-			num_venues++;
 			
 			APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
 			
-			if(venue.isRecent) {
-				text_layer_set_text(text_layer_last_checkin_venue, venues[0].name);
-				// HACK: Using the address field for date here
- 				text_layer_set_text(text_layer_last_checkin_date, venues[0].address);
-			}
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "debug");
-			if(venue.index == 1) {
+			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(124,50));
-				text_layer_set_text(text_layer_primary, venues[1].name);
-				text_layer_set_text(text_layer_primary_address, venues[1].address);
+				text_layer_set_text(text_layer_primary, venues[0].name);
+				text_layer_set_text(text_layer_primary_address, venues[0].address);
 				layer_mark_dirty(text_layer_get_layer(text_layer_primary));
 				layer_mark_dirty(layer_primary_back);
 			}

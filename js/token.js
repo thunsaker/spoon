@@ -1,4 +1,5 @@
 function getToken() {
+    alert("Urls \n window.location.href=" + window.location.href + " window.location=" + window.location + " document.URL=" + document.URL);
     var q = window.location.hash.toString();
     alert("Hash " + q);
     if(q !== null && q.length > 0) {

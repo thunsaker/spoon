@@ -75,8 +75,8 @@ gulp.task('watch', ['default'], function() {
     gulp.watch(['.dist/**']).on('change', livereload.changed);
 });
 
-gulp.task('deploy',['default'], function() {
+gulp.task('deploy', function() {
     debug = debug || false;
-    return gulp.src('dist/**/*')
+    return gulp.src('./dist/**/*')
                .pipe(ghPages());
 });

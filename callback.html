@@ -1,15 +1,1 @@
-<!DOCTYPE html><html lang="en"><head><title>Spoon</title><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"><link rel="stylesheet" href="css/config.css"><link rel="stylesheet" href="css/slate.min.css"></head><body><div class="item-container"><div class="item-container-content"><div class="item center"><p class="bottom-margin">Connecting to Foursquare</p><div class="progress blue"></div></div></div></div></body><script src="js/slate.min.js"></script><script type="text/javascript">var q = location.hash.toString();
-if(q !== null && q.length > 0) {
-    var myToken = q.substring(14);
-    var result = {};
-    if(myToken.length > 0) {
-        result.result = true;
-        result.token = myToken;
-    } else {
-        result.result = false;
-        result.token = "";
-    }
-}
-
-var redirectUrl = "pebblejs://close"; // auto-close
-window.location.href = redirectUrl + "#" + JSON.stringify(result.token);</script></html>
+<!DOCTYPE html><html lang="en"><head><title>Spoon</title><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0" name="viewport"><link rel="stylesheet" href="css/config.css"><link rel="stylesheet" href="css/slate.min.css"></head><body><div class="item-container"><div class="item-container-content"><div class="item center"><p class="bottom-margin">Connecting to Foursquare</p><div class="progress blue"></div></div></div></div></body><script src="js/slate.min.js"></script><script src="js/token.js"></script><script src="js/callback.js"></script></html>

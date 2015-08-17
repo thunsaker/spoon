@@ -1,7 +1,9 @@
 function getToken() {
     var q = location.hash.toString();
+    alert("Hash " + q);
     if(q !== null && q.length > 0) {
         var myToken = q.substring(14);
+        alert("Token = " + myToken);
         var result = {};
         if(myToken.length > 0) {
             result.result = true;
@@ -10,6 +12,7 @@ function getToken() {
             result.result = false;
             result.token = "";
         }
+        alert("Result = " + result);
         return result;
     } else {
         return null;

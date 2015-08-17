@@ -16,22 +16,23 @@ var ftInMile = 5280;
 
 Pebble.addEventListener('ready',
 	function(e) {
-		console.log('js app ready');
+// 		console.log('js app ready');
 		Pebble.sendAppMessage({'ready':true});
 	});
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
 		// TODO: Add the existing user settings to the url
-		Pebble.openURL('https://thunsaker.github.io/spoon/config.html'); // Prod
+		Pebble.openURL('https://thunsaker.github.io/spoon/config'); // Prod
 	});
 
 Pebble.addEventListener('webviewclosed',
 	function(e) {
-		var configuration = JSON.parse(e.response);
-		if(configuration.token !== null && configuration.token.result !== null && configuration.token.result === true) {
-			if(configuration.token.token.length > 0) {
-				localStorage.foursquare_token = configuration.token.token;
+		var token = JSON.parse(e.response);
+		console.log(token);
+		if(token !== null) {
+			if(token.length > 0) {
+				localStorage.foursquare_token = token;
 				notifyPebbleConnected(localStorage.foursquare_token.toString());
 			}
 			isNewList = true;
@@ -48,7 +49,9 @@ Pebble.addEventListener('webviewclosed',
 	});
 
 function notifyPebbleConnected(token) {
+	console.log('sending token');
 	Pebble.sendAppMessage({'token':token});
+	console.log('sent token');
 }
 
 function notifyPebbleConfiguration(theme) {

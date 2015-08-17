@@ -1,5 +1,5 @@
 function getToken() {
-    var q = location.hash.toString();
+    var q = window.location.hash.toString();
     if(q !== null && q.length > 0) {
         var myToken = q.substring(14);
         var result = {};

@@ -1,1 +1,0 @@
-Spoon project site.

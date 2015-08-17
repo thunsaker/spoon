@@ -12,5 +12,6 @@ $(document).ready(function() {
     config.theme = 0;
     config.unit = 0;
 
-    window.location.href = redirectUrl + "#" + JSON.stringify(config);
+    // window.location.href = redirectUrl + "#" + JSON.stringify(config);
+    window.location.href = redirectUrl + "#" + JSON.stringify(result.token);
 });

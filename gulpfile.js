@@ -54,6 +54,12 @@ gulp.task('copy', ['copy-js'], function() {
             'img/*.*'
         ])
         .pipe(gulp.dest('./dist/img'));
+        
+    // misc
+    gulp.src([
+            'misc/**'
+        ])
+        .pipe(gulp.dest('./dist'));
 });
 
 gulp.task('copy-js', function() {

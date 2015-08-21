@@ -102,9 +102,8 @@ static void getListOfLocations() {
 	if(up_count == 2) {
 		text_layer_set_text(text_layer_primary, "Refreshing...");
 		up_count = 0;
-	} else {
-		text_layer_set_text(text_layer_primary, "Fetching nearest venues...");
 	}
+	
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
 	app_message_outbox_send();
@@ -120,7 +119,6 @@ static void transition_circle_anim_stopped_handler(Animation *animation, bool fi
 		property_animation_destroy(s_transition_text_2_animation);
 	#endif
 
-	//drop_and_shrink = !reverse_menu_animation;
 	layer_mark_dirty(layer_primary_circle);
 	if(!last_mode) {
 		reverse_menu_animation = false;
@@ -668,7 +666,6 @@ static void window_load(Window *window) {
 	layer_add_child(window_layer, layer_primary_back);
 	
 	// Text 1
-	//text_layer_primary = text_layer_create(GRect(10,94,124,50));
 	text_layer_primary = text_layer_create(GRect(10,10,124,74));
 	text_layer_set_text_color(text_layer_primary, GColorBlack);
 	text_layer_set_background_color(text_layer_primary, GColorClear);
@@ -748,7 +745,6 @@ void out_sent_handler(DictionaryIterator *sent, void *context) {
 
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Out dropped: %i - %s", reason, translate_error(reason));
-	//text_layer_set_text(text_layer_primary, translate_error(reason));
 }
 
 void in_received_handler(DictionaryIterator *iter, void *context) {
@@ -811,9 +807,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				num_venues++;
 			}
 			
-//  			APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
-// 			printf("heap free: :%d", heap_bytes_free());
-			
 			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(124,50));
 				text_layer_set_text(text_layer_primary, venues[0].name);
@@ -828,7 +821,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				vibes_short_pulse();
 			}
 		}
-// 		app_message_outbox_send();
 	} else {
 		if(!text_tuple_token) {
 			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);

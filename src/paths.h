@@ -4,9 +4,6 @@
 // Conversion to GPath from SVG http://ardnejar.github.io/GPath.svg/
 // Icon Source: https://materialdesignicons.com/ and https://www.google.com/design/icons/
 
-// Old Check Path
-// 	7,
-// 	(GPoint []) {{104,78},{101,83},{109,93},{124,73},{121,68},{109,85},{104,78}}
 static const GPathInfo CHECK_PATH_POINTS = {
 	7,
     (GPoint []) {
@@ -20,6 +17,7 @@ static const GPathInfo CHECK_PATH_POINTS = {
     }
 };
 
+// TODO: Round this out later
 static const GPathInfo REFRESH_PATH_POINTS = {
     14,
     (GPoint []) {

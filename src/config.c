@@ -20,7 +20,7 @@ int config_get_unit() {
 }
 
 void config_set_unit(int config_unit) {
-	unit = unit;
+	unit = config_unit;
 }
 
 // void config_init(int config_theme, int config_unit) {

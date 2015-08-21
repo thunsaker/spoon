@@ -26,6 +26,11 @@
     "resources": {
         "media": [
             {
+                "file": "images/refresh.png",
+                "name": "IMAGE_REFRESH",
+                "type": "png"
+            },
+            {
                 "file": "images/spoon_2_menu_icon.png",
                 "menuIcon": true,
                 "name": "IMAGE_MENU",
@@ -34,11 +39,6 @@
             {
                 "file": "images/foursquare_cog.png",
                 "name": "IMAGE_COG",
-                "type": "png"
-            },
-            {
-                "file": "images/warning_white.png",
-                "name": "IMAGE_WARNING",
                 "type": "png"
             },
             {
@@ -60,7 +60,7 @@
         "basalt"
     ],
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
-    "versionLabel": "2.03",
+    "versionLabel": "2.04",
     "watchapp": {
         "watchface": false
     }

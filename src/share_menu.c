@@ -15,7 +15,9 @@ static char venuename[512];
 
 static Window *s_window;
 static MenuLayer *s_menu_layer;
-static Layer *layer_bar;
+#if PBL_SDK_3
+	static Layer *layer_bar;
+#endif
 static bool split_bar;
 
 static GBitmap *check_bitmap;
@@ -23,6 +25,7 @@ static GBitmap *check_bitmap;
 static bool twitter;
 static bool facebook;
 
+#if PBL_SDK_3
 void share_menu_draw_layer_bar(Layer *cell_layer, GContext *ctx) {
 	graphics_context_set_fill_color(ctx, (GColor)get_primary_color());
 	graphics_fill_rect(ctx, GRect(0,0,15,168), 8, GCornerNone);
@@ -38,6 +41,7 @@ void share_menu_draw_layer_bar(Layer *cell_layer, GContext *ctx) {
 	graphics_context_set_fill_color(ctx, GColorBlack);
 	graphics_fill_circle(ctx, GPoint(7,20), 3);
 }
+#endif
 
 static uint16_t menu_get_num_sections_callback(struct MenuLayer *menu_layer, void *callback_context) {
 	return NUM_MENU_SECTIONS;
@@ -147,7 +151,7 @@ static void window_load(Window *window) {
 	#endif
 	layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
 	
-	#if PBL_COLOR
+	#if PBL_SDK_3
 		layer_bar = layer_create(GRect(0,0,15,bounds.size.h));
 		layer_set_update_proc(layer_bar, share_menu_draw_layer_bar);
 		layer_add_child(window_layer, layer_bar);
@@ -170,7 +174,7 @@ static void init(void) {
 	window_stack_push(s_window, true);	
 }
 
-static void deinit(void) {
+void share_menu_deinit(void) {
 	window_destroy_safe(s_window);
 }
 

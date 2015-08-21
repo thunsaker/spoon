@@ -50,6 +50,16 @@
                 "file": "images/honey_spoon_white.png",
                 "name": "IMAGE_SPOON_WHITE",
                 "type": "png"
+            },
+            {
+                "type": "raw",
+                "name": "LOCALE_ENGLISH",
+                "file": "locale_english.bin"
+            },
+            {
+                "type": "raw",
+                "name": "LOCALE_SPANISH",
+                "file": "locale_spanish.bin"
             }
         ]
     },
@@ -60,7 +70,7 @@
         "basalt"
     ],
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
-    "versionLabel": "2.04",
+    "versionLabel": "2.1",
     "watchapp": {
         "watchface": false
     }

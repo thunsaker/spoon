@@ -12,6 +12,7 @@
 #include "common.h"
 #include "config.h"
 #include "paths.h"
+#include <localize.h>
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
@@ -100,7 +101,7 @@ static void getListOfLocations() {
 
 	text_layer_set_text(text_layer_primary_address, "");
 	if(up_count == 2) {
-		text_layer_set_text(text_layer_primary, "Refreshing...");
+		text_layer_set_text(text_layer_primary, _("Refreshing..."));
 		up_count = 0;
 	}
 	
@@ -509,7 +510,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 		#ifdef PBL_COLOR
 			GRect bounds = layer_get_bounds(cell_layer);
 			GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-			graphics_draw_text(ctx, "Powered by Foursquare", little_font,
+			graphics_draw_text(ctx, _("Powered by Foursquare"), little_font,
 							  GRect(5, 4, bounds.size.w - 10, 20),
 							  GTextOverflowModeFill,
 							  GTextAlignmentCenter,
@@ -522,7 +523,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 			graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
 		#else
-			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
+			menu_cell_basic_draw(ctx, cell_layer, _("Foursquare"), _("Powered"), image_cog);
 		#endif	
 	} else {
 		#ifdef PBL_COLOR
@@ -611,7 +612,7 @@ static void window_load(Window *window) {
 	text_layer_set_background_color(text_layer_last_checkin_title, GColorClear);
 	text_layer_set_font(text_layer_last_checkin_title, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
 	text_layer_set_text_alignment(text_layer_last_checkin_title, GTextAlignmentLeft);
-	text_layer_set_text(text_layer_last_checkin_title, "Last Check-In");
+	text_layer_set_text(text_layer_last_checkin_title, _("Last Check-In"));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_title));
 	
 	// Venue
@@ -620,7 +621,7 @@ static void window_load(Window *window) {
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
 	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
 	text_layer_set_text_alignment(text_layer_last_checkin_venue, GTextAlignmentLeft);
-	text_layer_set_text(text_layer_last_checkin_venue, "Venue Name");
+	text_layer_set_text(text_layer_last_checkin_venue, _("Venue Name"));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
 	
 	text_layer_last_checkin_date = text_layer_create(GRect(10,124,bounds.size.w,20));
@@ -629,7 +630,7 @@ static void window_load(Window *window) {
 	text_layer_set_font(text_layer_last_checkin_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	text_layer_set_text_alignment(text_layer_last_checkin_date, GTextAlignmentLeft);
 
-	text_layer_set_text(text_layer_last_checkin_date, "at sometime...");
+	text_layer_set_text(text_layer_last_checkin_date, _("at sometime..."));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_date));
 	
 	// TODO: Not sure about address placement here...
@@ -672,7 +673,7 @@ static void window_load(Window *window) {
 	text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
 	text_layer_set_text_alignment(text_layer_primary, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(text_layer_primary, GTextOverflowModeTrailingEllipsis);
-	text_layer_set_text(text_layer_primary, "Loading...");
+	text_layer_set_text(text_layer_primary, _("Loading..."));
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
 
 	text_layer_primary_address = text_layer_create(GRect(10,60,124,20));
@@ -706,13 +707,13 @@ static void window_load(Window *window) {
 			no_foursquare = false;
 		} else {
 			no_foursquare = true;
- 			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+ 			text_layer_set_text(text_layer_primary, _("Connect to Foursquare on Phone"));
 // 			text_layer_set_text(text_layer_primary, "Mos Eisley Cantina");
 // 			text_layer_set_text(text_layer_primary_address, "24m - 7 Jawa Way");
 		}
 	} else {
 		no_internet = true;
-		text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NO_PHONE);
+		text_layer_set_text(text_layer_primary, _("Error:\n No connection to phone"));
 	}
 }
 
@@ -772,7 +773,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			getListOfLocations();
 		}
 	} else if(text_tuple_token && !text_tuple_latlng) {
-		text_layer_set_text(text_layer_primary, "Connected to Foursquare!");
+		text_layer_set_text(text_layer_primary, _("Connected to Foursquare!"));
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
 		persist_exists(KEY_TOKEN);
 		char key_stored[50];
@@ -823,9 +824,9 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		}
 	} else {
 		if(!text_tuple_token) {
-			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+			text_layer_set_text(text_layer_primary, _("Connect to Foursquare on Phone"));
 		} else {
-			text_layer_set_text(text_layer_primary, "Cannot determine current location. :(");
+			text_layer_set_text(text_layer_primary, _("Cannot determine current location. :("));
 		}
 	}
 }
@@ -840,6 +841,9 @@ static void init(void) {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);	
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	
+	// Init locale
+	locale_init();
 	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);

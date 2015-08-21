@@ -3,6 +3,7 @@
 #pragma once
 	
 #include <pebble.h>
+#include <localize.h>
 
 typedef struct {
         char id[25];
@@ -41,7 +42,3 @@ enum {
 	#define SCREEN_HEIGHT 156
 	#define STATUS_BAR_OFFSET 12
 #endif
-	
-#define DIALOG_MESSAGE_NOT_CONNECTED  "Connect to Foursquare on Phone"
-#define DIALOG_MESSAGE_NO_PHONE "Error:\n No connection to phone"
-#define DIALOG_MESSAGE_NO_LOCATION  "No Location"

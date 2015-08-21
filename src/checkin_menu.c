@@ -6,6 +6,7 @@
 #include "checkin.h"
 #include "colors.h"
 #include "share_menu.h"
+#include <localize.h>
 	
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ITEMS 3
@@ -52,10 +53,10 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
     	default:
 			switch (cell_index->row) {
 			  	case 0:
-				  	menu_cell_basic_draw(ctx, cell_layer, "Checkin", NULL, NULL);
+				  	menu_cell_basic_draw(ctx, cell_layer, _("Checkin"), NULL, NULL);
 				  	break;
 			  	case 1:
-					menu_cell_basic_draw(ctx, cell_layer, "Share", NULL, NULL);
+					menu_cell_basic_draw(ctx, cell_layer, _("Share"), NULL, NULL);
 					GRect bounds = layer_get_bounds(cell_layer);
 					char* alligators = ">>";
 					GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
@@ -68,7 +69,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 									   NULL);
 					break;
 			  	case 2: 
-				  	menu_cell_basic_draw(ctx, cell_layer, "Private Checkin", NULL, NULL);
+				  	menu_cell_basic_draw(ctx, cell_layer, _("Private Checkin"), NULL, NULL);
 				  	break;
 			}
 			break;

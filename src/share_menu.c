@@ -5,6 +5,7 @@
 #include "share_menu.h"
 #include "checkin.h"
 #include "colors.h"
+#include <localize.h>
 	
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ITEMS 3
@@ -56,7 +57,7 @@ static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t s
 }
 
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
-	menu_cell_basic_header_draw(ctx, cell_layer, "Share To...");
+	menu_cell_basic_header_draw(ctx, cell_layer, _("Share To..."));
 }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
@@ -75,7 +76,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 			graphics_context_set_stroke_color(ctx, GColorWhite);
 			switch (cell_index->row) {
 			  	case 0:
-				  	menu_cell_basic_draw(ctx, cell_layer, "Twitter", NULL, NULL);
+				  	menu_cell_basic_draw(ctx, cell_layer, _("Twitter"), NULL, NULL);
 					graphics_draw_rect(ctx, box_bounds);
 					if(twitter) {
 						graphics_context_set_compositing_mode(ctx, GCompOpSet);
@@ -83,7 +84,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 					}
 				  	break;
 			  	case 1:
-					menu_cell_basic_draw(ctx, cell_layer, "Facebook", NULL, NULL);
+					menu_cell_basic_draw(ctx, cell_layer, _("Facebook"), NULL, NULL);
 					graphics_draw_rect(ctx, box_bounds);
 					if(facebook) {
 						graphics_context_set_compositing_mode(ctx, GCompOpSet);
@@ -91,7 +92,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 					}
 					break;
 			  	case 2: 
-				  	menu_cell_basic_draw(ctx, cell_layer, "Checkin", NULL, NULL);
+				  	menu_cell_basic_draw(ctx, cell_layer, _("Checkin"), NULL, NULL);
 				  	break;
 			}
 			break;

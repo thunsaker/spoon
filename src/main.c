@@ -10,8 +10,8 @@
 #include "checkin.h"
 #include "libs/math-utils.h"
 #include "common.h"
-#include "dialog_window.h"
 #include "config.h"
+#include "paths.h"
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
@@ -27,7 +27,6 @@
 static SpoonVenue venues[MAX_VENUES];
 static int num_venues;
 static SpoonVenue lastCheckinVenue;
-static char error[128];
 static char venueid[128];
 static char venuename[512];
 
@@ -49,6 +48,7 @@ static TextLayer *text_layer_last_checkin_venue;
 static TextLayer *text_layer_last_checkin_address;
 static TextLayer *text_layer_last_checkin_date;
 static Layer *layer_last_checkin;
+static GBitmap *image_refresh;
 
 #ifdef PBL_COLOR
 	static uint8_t primary_color;
@@ -75,12 +75,9 @@ static bool last_mode;
 static bool no_foursquare;
 static bool no_internet;
 static int up_count = 0;
+static bool is_refreshing;
 
 static GPath *s_check_path = NULL;
-static const GPathInfo CHECK_PATH_POINTS = {
-	7,
-	(GPoint []) {{104,78},{101,83},{109,93},{124,73},{121,68},{109,85},{104,78}}
-};
 
 static PropertyAnimation *s_drop_current_animation;
 static PropertyAnimation *s_drop_last_animation;
@@ -92,10 +89,11 @@ static PropertyAnimation *s_transition_circle_animation;
 static PropertyAnimation *s_transition_menu_animation;
 
 static void getListOfLocations() {
+	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, 1);
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
-
+	
 	if (iter == NULL) {
 		return;
 	}
@@ -284,7 +282,7 @@ static void transition_animation() {
 	#else
 		finish = GRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	#endif
-		
+
 	if(reverse_menu_animation) {
 		s_transition_menu_animation = 
 			property_animation_create_layer_frame(menu_layer_get_layer(layer_menu_venues), &finish, &start);
@@ -315,7 +313,7 @@ void circle_grow_timer_tick() {
 		circle_radius = DEFAULT_CIRCLE_RADIUS;
 		circle_radius_count = 1;
 		
-		app_timer_cancel(circle_grow_timer);
+		app_timer_cancel_safe(circle_grow_timer);
 		checkin_show();
 	}
 }
@@ -340,14 +338,16 @@ static void up_single_click_handler(ClickRecognizerRef recognizer, void *context
 			}
 			// TODO: Add bounce anim
 		} else {
-			reverse_last_animation = false;
-			last_checkin_show();
+			if(strlen(lastCheckinVenue.name) > 0) {
+				reverse_last_animation = false;
+				last_checkin_show();
+			}
 		}
 	}
 }
 
 static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-	if(no_internet || no_foursquare || num_venues == 0) {
+	if(no_internet || no_foursquare) {
 	} else {
 		if(menu_mode) {
 			menu_layer_set_selected_next(layer_menu_venues, false, MenuRowAlignCenter, true);
@@ -355,11 +355,13 @@ static void down_single_click_handler(ClickRecognizerRef recognizer, void *conte
 			reverse_last_animation = true;
 			last_checkin_show();
 		} else {
-			up_count = 0;
-			reverse_menu_animation = false;
-			transition_animation();
-			drop_and_shrink = false;
-			menu_layer_set_selected_index(layer_menu_venues, MenuIndex(1,1), MenuRowAlignCenter, true);
+			if(num_venues >= 1) {
+				up_count = 0;
+				reverse_menu_animation = false;
+				transition_animation();
+				drop_and_shrink = false;
+				menu_layer_set_selected_index(layer_menu_venues, MenuIndex(1,1), MenuRowAlignCenter, true);
+			}
 		}
 	}
 }
@@ -466,11 +468,23 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 		#endif
 		// Circle
 		graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS);
+		
 		// Icon
-		graphics_context_set_fill_color(ctx, GColorWhite);
-		graphics_context_set_stroke_color(ctx, GColorWhite);
-		s_check_path = gpath_create(&CHECK_PATH_POINTS);
-		gpath_draw_filled(ctx, s_check_path);
+		if(is_refreshing) {
+			GRect bitmap_bounds = gbitmap_get_bounds(image_refresh);
+			GRect refresh_bounds = GRect(102,71,
+										 bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#ifdef PBL_COLOR
+				graphics_context_set_compositing_mode(ctx, GCompOpSet);
+			#endif
+			graphics_draw_bitmap_in_rect(ctx, image_refresh, refresh_bounds);
+		} else {
+			graphics_context_set_fill_color(ctx, GColorWhite);
+			graphics_context_set_stroke_color(ctx, GColorWhite);
+			s_check_path = gpath_create(&CHECK_PATH_POINTS);
+			gpath_move_to(s_check_path, GPoint(101,70));
+			gpath_draw_filled(ctx, s_check_path);
+		}
 	}
 }
 
@@ -664,7 +678,6 @@ static void window_load(Window *window) {
 	text_layer_set_text(text_layer_primary, "Loading...");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
 
-	//text_layer_primary_address = text_layer_create(GRect(10,144,124,20));
 	text_layer_primary_address = text_layer_create(GRect(10,60,124,20));
 	text_layer_set_text_color(text_layer_primary_address, GColorBlack);
 	text_layer_set_background_color(text_layer_primary_address, GColorClear);
@@ -673,10 +686,12 @@ static void window_load(Window *window) {
 	text_layer_set_text(text_layer_primary_address, "");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
 	
-	// FAB
+	// FAB	
 	layer_primary_circle = layer_create(GRect(0,0 - STATUS_BAR_OFFSET,bounds.size.w,bounds.size.h));
-	layer_set_update_proc(layer_primary_circle, draw_layer_primary_circle);
+ 	layer_set_update_proc(layer_primary_circle, draw_layer_primary_circle);
 	layer_add_child(window_layer, layer_primary_circle);
+	
+	image_refresh = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_REFRESH);
 	
 	// Status Bar
 	#ifdef PBL_SDK_3
@@ -728,7 +743,7 @@ char *translate_error(AppMessageResult result) {
 }
 
 void out_sent_handler(DictionaryIterator *sent, void *context) {
-	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Out Sent");
+// 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Out Sent");
 }
 
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
@@ -796,7 +811,8 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				num_venues++;
 			}
 			
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
+//  			APP_LOG(APP_LOG_LEVEL_DEBUG, "In index: %i", venue.index);
+// 			printf("heap free: :%d", heap_bytes_free());
 			
 			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(124,50));
@@ -808,10 +824,11 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			menu_layer_reload_data_and_mark_dirty(layer_menu_venues);
 			
 			if(index == MAX_VENUES - 1) {
+				is_refreshing = false;
 				vibes_short_pulse();
 			}
 		}
-		app_message_outbox_send();
+// 		app_message_outbox_send();
 	} else {
 		if(!text_tuple_token) {
 			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
@@ -843,17 +860,22 @@ static void init(void) {
 
 static void deinit(void) {
   	animation_unschedule_all();
-	text_layer_destroy(text_layer_last_checkin_title);
-	text_layer_destroy(text_layer_last_checkin_venue);
-	text_layer_destroy(text_layer_last_checkin_address);
-	text_layer_destroy(text_layer_last_checkin_date);
-	layer_destroy(layer_last_checkin);
-	text_layer_destroy(text_layer_primary);
-	text_layer_destroy(text_layer_primary_address);
-	layer_destroy(layer_primary_back);
-	layer_destroy(layer_back);
-	bitmap_layer_destroy(image_layer_back);
-	window_destroy(s_main_window);
+	
+	text_layer_destroy_safe(text_layer_last_checkin_title);
+	text_layer_destroy_safe(text_layer_last_checkin_venue);
+	text_layer_destroy_safe(text_layer_last_checkin_address);
+	text_layer_destroy_safe(text_layer_last_checkin_date);
+	layer_destroy_safe(layer_last_checkin);
+	text_layer_destroy_safe(text_layer_primary);
+	text_layer_destroy_safe(text_layer_primary_address);
+	layer_destroy_safe(layer_primary_back);
+	layer_destroy_safe(layer_back);
+	bitmap_layer_destroy_safe(image_layer_back);
+	gbitmap_destroy(image_cog);
+	gbitmap_destroy(image_refresh);
+	window_destroy_safe(s_main_window);
+	checkin_deinit();
+	checkin_menu_deinit();
 }
 
 int main(void) {

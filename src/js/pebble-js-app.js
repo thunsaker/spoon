@@ -29,7 +29,7 @@ Pebble.addEventListener('showConfiguration',
 Pebble.addEventListener('webviewclosed',
 	function(e) {
 		var token = JSON.parse(e.response);
-		console.log(token);
+// 		console.log(token);
 		if(token !== null) {
 			if(token.length > 0) {
 				localStorage.foursquare_token = token;
@@ -49,9 +49,9 @@ Pebble.addEventListener('webviewclosed',
 	});
 
 function notifyPebbleConnected(token) {
-	console.log('sending token');
+// 	console.log('sending token');
 	Pebble.sendAppMessage({'token':token});
-	console.log('sent token');
+// 	console.log('sent token');
 }
 
 function notifyPebbleConfiguration(theme) {
@@ -69,7 +69,7 @@ var error = function(e) {
 };
 
 var success = function(position) {
- 	var userToken = localStorage.foursquare_token.toString();
+	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {	
 		fetchMostRecentCheckin(userToken);
 		fetchClosestVenues(userToken, position);
@@ -79,7 +79,7 @@ var success = function(position) {
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
-//  console.log("requestUrl: " + requestUrl);
+// 	console.log("requestUrl: " + requestUrl);
 	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
 		if (req.readyState == 4) {
@@ -289,10 +289,12 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 
 Pebble.addEventListener('appmessage',
 	function(e) {
-		//console.log('received appmessage');
+// 		console.log('received appmessage');
 		if (e.payload.id) {
+// 			console.log('received appmessage id: ' + e.payload.id);
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
 		} else if (e.payload.refresh) {
+// 			console.log('received appmessage: ' + e.payload);
 			getClosestVenues();
 		}
 	});

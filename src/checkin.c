@@ -4,6 +4,7 @@
 #include "checkin.h"
 #include "colors.h"
 #include "common.h"
+#include "libs/pebble-assist.h"
 
 static Window *s_main_window;
 #ifdef PBL_SDK_3
@@ -61,6 +62,7 @@ static void countdown_tick(void *ctx) {
 	if(progress > 0) {
 		start_countdown();
 	} else {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
 		window_stack_pop_all(true);
 	}
 }
@@ -115,8 +117,8 @@ void pulse_check_tick() {
 		text_layer_set_text(text_layer_status, checkinResult ? "Checked In!" : "Something went wrong :(");
 		
 		layer_mark_dirty(layer_check);
-		app_timer_cancel(pulse_check_timer);
-		app_timer_cancel(checkin_timeout_timer);
+		app_timer_cancel_safe(pulse_check_timer);
+		app_timer_cancel_safe(checkin_timeout_timer);
 		start_countdown();
 	} else {
 		pulse_check_timer = app_timer_register(100, pulse_check_tick, NULL);
@@ -125,7 +127,7 @@ void pulse_check_tick() {
 
 
 void checkin_timeout_tick() {
-	app_timer_cancel(pulse_check_timer);
+	app_timer_cancel_safe(pulse_check_timer);
 	// TODO: Replace with frown?
 	//s_check_large_path = gpath_create(&CHECK_LARGE_PATH_POINTS);
 	#ifdef PBL_COLOR
@@ -227,7 +229,7 @@ static void window_load(Window *window) {
 }
 
 static void window_unload(Window *window) {
-	app_timer_cancel(countdown_timer);
+	app_timer_cancel_safe(countdown_timer);
 }
 
 static void init(void) {
@@ -241,10 +243,10 @@ static void init(void) {
 	window_stack_push(s_main_window, true);
 }
 
-static void deinit(void) {
-	layer_destroy(layer_back);
-	layer_destroy(layer_check);
-	window_destroy(s_main_window);
+void checkin_deinit(void) {
+	layer_destroy_safe(layer_back);
+	layer_destroy_safe(layer_check);
+	window_destroy_safe(s_main_window);
 }
 
 void checkin_show(void) {

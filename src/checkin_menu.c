@@ -146,8 +146,9 @@ static void init(void) {
 	window_stack_push(s_window, true);	
 }
 
-static void deinit(void) {
+void checkin_menu_deinit(void) {
 	window_destroy_safe(s_window);
+	share_menu_deinit();
 }
 
 void checkin_menu_show(bool menu_mode, char venue_guid[128], char venue_name[512]) {

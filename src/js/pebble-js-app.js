@@ -16,7 +16,7 @@ var ftInMile = 5280;
 
 Pebble.addEventListener('ready',
 	function(e) {
-// 		console.log('js app ready');
+// console.log('js app ready');
 		Pebble.sendAppMessage({'ready':true});
 	});
 
@@ -28,7 +28,8 @@ Pebble.addEventListener('showConfiguration',
 
 Pebble.addEventListener('webviewclosed',
 	function(e) {
-		var token = JSON.parse(e.response);
+// 		var token = JSON.parse(e.response);
+		var token = "04BP0MTH40ICZCXIMDKRJNIPSUYT5BMHKOAEWLEPYI24PQJD";
 // 		console.log(token);
 		if(token !== null) {
 			if(token.length > 0) {

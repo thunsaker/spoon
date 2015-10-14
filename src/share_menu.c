@@ -175,7 +175,9 @@ static void init(void) {
 }
 
 void share_menu_deinit(void) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Share menu deinit");
 	window_destroy_safe(s_window);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Share menu deinit");
 }
 
 void share_menu_show(bool menu_mode, char venue_guid[128], char venue_name[512]) {

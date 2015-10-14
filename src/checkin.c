@@ -5,6 +5,7 @@
 #include "colors.h"
 #include "common.h"
 #include "libs/pebble-assist.h"
+#include "paths.h"
 
 static Window *s_main_window;
 #ifdef PBL_SDK_3
@@ -33,14 +34,6 @@ static int pulse = 0;
 static int progress = 100;
 
 static GPath *s_check_large_path = NULL;
-static const GPathInfo CHECK_LARGE_PATH_POINTS = {
-  7,
-  (GPoint []) {{45,65},{35,77},{62,111},{115,42},{103,29},{62,87},{45,65}}
-};
-static const GPathInfo CHECK_LARGE_2_PATH_POINTS = {
-  7,
-  (GPoint []) {{50,67},{41,76},{64,104},{108,46},{99,36},{64,85},{50,67}}
-};
 
 void checkin_show(void);
 static void countdown_tick(void *ctx);
@@ -63,7 +56,11 @@ static void countdown_tick(void *ctx) {
 		start_countdown();
 	} else {
 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
-		window_stack_pop_all(true);
+// 		#ifdef PBL_SDK_3
+			window_stack_pop_all(true);
+// 		#else
+// 			window_stack_pop(s_main_window);
+// 		#endif
 	}
 }
 
@@ -244,9 +241,15 @@ static void init(void) {
 }
 
 void checkin_deinit(void) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Checkin deinit");
 	layer_destroy_safe(layer_back);
 	layer_destroy_safe(layer_check);
+	text_layer_destroy_safe(text_layer_status);
+	#ifdef PBL_SDK_3
+		layer_destroy_safe(layer_countdown_bar);
+	#endif
 	window_destroy_safe(s_main_window);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Checkin deinit");
 }
 
 void checkin_show(void) {

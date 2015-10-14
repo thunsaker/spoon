@@ -37,3 +37,13 @@ static const GPathInfo REFRESH_PATH_POINTS = {
       {20, 4}
     }
 };
+
+static const GPathInfo CHECK_LARGE_PATH_POINTS = {
+  7,
+  (GPoint []) {{45,65},{35,77},{62,111},{115,42},{103,29},{62,87},{45,65}}
+};
+
+static const GPathInfo CHECK_LARGE_2_PATH_POINTS = {
+  7,
+  (GPoint []) {{50,67},{41,76},{64,104},{108,46},{99,36},{64,85},{50,67}}
+};

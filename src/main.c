@@ -1,4 +1,4 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "libs/pebble-assist.h"
@@ -20,9 +20,17 @@
 #define ANIM_DELAY 300
 	
 #define NUM_MENU_SECTIONS 1
-#define NUM_MENU_ITEMS 17
-	
-#define MAX_VENUES 15
+#ifdef PBL_PLATFORM_APLITE
+	#define NUM_MENU_ITEMS 12
+#else
+	#define NUM_MENU_ITEMS 17
+#endif
+
+#ifdef PBL_PLATFORM_APLITE
+	#define MAX_VENUES 10
+#else
+	#define MAX_VENUES 15
+#endif
 
 static SpoonVenue venues[MAX_VENUES];
 static int num_venues;
@@ -96,7 +104,7 @@ static PropertyAnimation *s_transition_menu_animation;
 
 static void getListOfLocations() {
 	is_refreshing = true;
-	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, 1);
+	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	if (iter == NULL) {
@@ -348,74 +356,54 @@ void circle_grow_timer_tick() {
 }
 
 static void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "up");
 	if(no_foursquare) {
 	} else {
 		if(menu_mode) {
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "up menu");
 			up_count = 0;
 			if(menu_layer_get_selected_index(layer_menu_venues).row == 1) {
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "up menu index = 1");
 				reverse_menu_animation = true;
 				menu_mode = false;
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "up menu trans before");
 				transition_animation();
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "up menu trans after");
 			}
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "up menu next before");
+
 			menu_layer_set_selected_next(layer_menu_venues, true, MenuRowAlignCenter, true);
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "up menu next after");
 		} else if(last_mode) {
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "up last");
 			up_count++;
 			if(up_count == 2) {
 				getListOfLocations();
+				
 				// Return to venue list
 				reverse_last_animation = true;
 				last_checkin_show();
 			}
 			// TODO: Add bounce anim
 		} else {
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "up else");
 			up_count = 0;
 			if(strlen(lastCheckinVenue.name) > 0) {
 				reverse_last_animation = false;
 				last_checkin_show();
 			}
 		}
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "up after ifs");
 	}
 }
 
 static void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "down");
 	if(no_internet || no_foursquare) {
 	} else {
 		if(menu_mode) {
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "down menu");
 			menu_layer_set_selected_next(layer_menu_venues, false, MenuRowAlignCenter, true);
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "down menu next after");
 		} else if(last_mode) {
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "down last");
 			reverse_last_animation = true;
 			last_checkin_show();
 		} else {
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "down else");
 			if(num_venues >= 1) {
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "down else venues > 1");
 				up_count = 0;
 				reverse_menu_animation = false;
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "down else before trans");
 				transition_animation();
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "down else after trans");
 				drop_and_shrink = false;
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "down else next before");
 				menu_layer_set_selected_index(layer_menu_venues, MenuIndex(1,1), MenuRowAlignCenter, true);
-				APP_LOG(APP_LOG_LEVEL_DEBUG, "down else next after");
 			}
-			APP_LOG(APP_LOG_LEVEL_DEBUG, "down else no venues");
 		}
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "down after ifs");
 	}
 }
 
@@ -475,6 +463,9 @@ static void click_config_provider(void *context) {
 void draw_image_layer_back(Layer *cell_layer, GContext *ctx) {
 	#ifdef PBL_COLOR
 		draw_transitioning_rect(ctx, GRect(0,0,144,168), (GColor)back_color, (GColor)new_back_color);
+	#else
+		graphics_context_set_fill_color(ctx, GColorDarkGray);
+		graphics_fill_rect(ctx, GRect(0,0,144,168/2), 0, GCornersTop);
 	#endif
 }
 
@@ -483,7 +474,7 @@ void draw_layer_primary_back(Layer *cell_layer, GContext *ctx) {
 		graphics_context_set_fill_color(ctx, (GColor)back_color);
 		graphics_fill_rect(ctx, GRect(0,0,144,94), 0, GCornerNone);
 	#else
-		graphics_context_set_fill_color(ctx, GColorBlack);
+		graphics_context_set_fill_color(ctx, GColorWhite);
 		graphics_fill_rect(ctx, GRect(0,0,144,2), 0, GCornersTop);
 	#endif
 }
@@ -656,10 +647,10 @@ static void window_load(Window *window) {
 		// TODO: Show image from the first venue, maybe
 		start_transitioning_rect(layer_back, 100, 1);
 	#endif
-		
+	
 	// Last Checkin
 	layer_last_checkin = layer_create(GRect(0,0-bounds.size.h, bounds.size.w, bounds.size.h));
-	
+
 	// Title
 	text_layer_last_checkin_title = text_layer_create(GRect(40,7,bounds.size.w,20));
 	text_layer_set_text_color(text_layer_last_checkin_title, GColorBlack);
@@ -668,16 +659,16 @@ static void window_load(Window *window) {
 	text_layer_set_text_alignment(text_layer_last_checkin_title, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_last_checkin_title, "Last Check-In");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_title));
-	
+
 	// Venue
-	text_layer_last_checkin_venue = text_layer_create(GRect(10,40,bounds.size.w-10,74));
+	text_layer_last_checkin_venue = text_layer_create(GRect(10,74,bounds.size.w-10,74));
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
-	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
 	text_layer_set_text_alignment(text_layer_last_checkin_venue, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_last_checkin_venue, "Venue Name");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
-	
+
 	text_layer_last_checkin_date = text_layer_create(GRect(10,124,bounds.size.w,20));
 	text_layer_set_text_color(text_layer_last_checkin_date, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_date, GColorClear);
@@ -686,10 +677,10 @@ static void window_load(Window *window) {
 
 	text_layer_set_text(text_layer_last_checkin_date, "at sometime...");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_date));
-	
+
 	// TODO: Not sure about address placement here...
 	//layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_address));
-	
+
 	layer_add_child(window_layer, layer_last_checkin);
 	
 	// Menu
@@ -708,10 +699,13 @@ static void window_load(Window *window) {
 	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_COG);
 	
 	#ifdef PBL_SDK_3
-		menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
-		menu_layer_set_highlight_colors(layer_menu_venues, GColorWhite, GColorBlack);
-	#else
-		
+		#ifdef PBL_COLOR
+			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
+			menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorWhite);
+		#else
+			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorBlack);
+			menu_layer_set_highlight_colors(layer_menu_venues, GColorBlack, GColorWhite);
+		#endif
 	#endif
 	layer_add_child(window_layer, menu_layer_get_layer(layer_menu_venues));
 
@@ -749,7 +743,11 @@ static void window_load(Window *window) {
 	#ifdef PBL_SDK_3
 		s_status_bar = status_bar_layer_create();
 		status_bar_layer_set_separator_mode(s_status_bar, StatusBarLayerSeparatorModeDotted);
-		status_bar_layer_set_colors(s_status_bar, GColorClear, GColorBlack);
+		#ifdef PBL_COLOR
+			status_bar_layer_set_colors(s_status_bar, GColorClear, GColorBlack);
+		#else
+			status_bar_layer_set_colors(s_status_bar, GColorWhite, GColorBlack);
+		#endif
 		layer_add_child(
 			window_layer, status_bar_layer_get_layer(s_status_bar));
 	#endif
@@ -813,6 +811,8 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
 	Tuple *text_tuple_config = dict_find(iter, SPOON_CONFIG);
 	
+// 	APP_LOG(APP_LOG_LEVEL_DEBUG, "In received");
+	
 	if(text_tuple_error) {
 		text_layer_set_text(text_layer_primary, text_tuple_error->value->cstring);
 	} else if(text_tuple_config) {
@@ -827,6 +827,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			getListOfLocations();
 		}
 	} else if(text_tuple_token && !text_tuple_latlng) {
+// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Token: %s", text_tuple_token->value->cstring);
 		text_layer_set_text(text_layer_primary, "Connected to Foursquare!");
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
 		persist_exists(KEY_TOKEN);
@@ -886,6 +887,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 }
 
 void in_dropped_handler(AppMessageResult reason, void *context) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message.");
    	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
@@ -893,8 +895,8 @@ static void init(void) {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
-	app_message_register_outbox_failed(out_failed_handler);	
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	app_message_register_outbox_failed(out_failed_handler);
+	app_message_open(128, 64);
 	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);

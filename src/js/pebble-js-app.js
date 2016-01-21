@@ -23,10 +23,9 @@ Pebble.addEventListener('showConfiguration',
 	function(e) {
 		// TODO: Add the existing user settings to the url
 // 		Pebble.openURL('https://thunsaker.github.io/spoon/config'); // Prod
-
-		// Dev
-		var client_id = 'XVCTS2NLOT3D24JHQBM40MZGWQD1SR5VJMIBXQY2AYQ3WVYC';
-		var callback_uri = 'http%3A%2F%2Fblog.thomashunsaker.com%2Fspoon%2Fcallback.html';
+		
+		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
+ 		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
 		if(client_id && callback_uri) {
 			Pebble.openURL('https://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri);
 		} else {
@@ -36,18 +35,14 @@ Pebble.addEventListener('showConfiguration',
 
 Pebble.addEventListener('webviewclosed',
 	function(e) {
-		var token = JSON.parse(e.response);
-// 		console.log(token);
-		if(token !== null) {
-			if(token.length > 0) {
-// 				console.log("Token " + token);
-				localStorage.foursquare_token = token;
- 				notifyPebbleConnected(localStorage.foursquare_token.toString());
-			}
+		var configuration = JSON.parse(e.response);
+		if(configuration.result) {
+			localStorage.foursquare_token = configuration.token;
+			notifyPebbleConnected(localStorage.foursquare_token.toString());
 			isNewList = true;
 			getClosestVenues();
 		} else {
-			//Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
+			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
 		}
 		
 // 		if(configuration.theme !== null && configuration.unit !== null) {
@@ -55,7 +50,8 @@ Pebble.addEventListener('webviewclosed',
 // 			localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
 // 			notifyPebbleConfiguration(configuration.theme);
 // 		}
-	});
+	}
+);
 
 function notifyPebbleConnected(token) {
 // 	console.log("Sending the token: " + token);
@@ -78,7 +74,8 @@ var error = function(e) {
 };
 
 var success = function(position) {
-	var userToken = localStorage.foursquare_token.toString();
+	var userToken = localStorage.foursquare_token !== null ?
+		localStorage.foursquare_token.toString() : null;
 	if(userToken) {	
 		fetchMostRecentCheckin(userToken);
 		fetchClosestVenues(userToken, position);

@@ -241,7 +241,6 @@ static void init(void) {
 }
 
 void checkin_deinit(void) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Checkin deinit");
 	layer_destroy_safe(layer_back);
 	layer_destroy_safe(layer_check);
 	text_layer_destroy_safe(text_layer_status);
@@ -249,7 +248,6 @@ void checkin_deinit(void) {
 		layer_destroy_safe(layer_countdown_bar);
 	#endif
 	window_destroy_safe(s_main_window);
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Checkin deinit");
 }
 
 void checkin_show(void) {

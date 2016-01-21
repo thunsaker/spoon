@@ -1,4 +1,4 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 1000;
@@ -16,29 +16,33 @@ var ftInMile = 5280;
 
 Pebble.addEventListener('ready',
 	function(e) {
-// 		console.log('js app ready');
 		Pebble.sendAppMessage({'ready':true});
 	});
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
 		// TODO: Add the existing user settings to the url
-		Pebble.openURL('https://thunsaker.github.io/spoon/config'); // Prod
+// 		Pebble.openURL('https://thunsaker.github.io/spoon/config'); // Prod
+		
+		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
+ 		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
+		if(client_id && callback_uri) {
+			Pebble.openURL('https://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri);
+		} else {
+			Pebble.showSimpleNotificationOnPebble('Spoon', 'Invalid authorization url, please check client_id and callback_uri variables.');
+		}
 	});
 
 Pebble.addEventListener('webviewclosed',
 	function(e) {
-		var token = JSON.parse(e.response);
-// 		console.log(token);
-		if(token !== null) {
-			if(token.length > 0) {
-				localStorage.foursquare_token = token;
-				notifyPebbleConnected(localStorage.foursquare_token.toString());
-			}
+		var configuration = JSON.parse(e.response);
+		if(configuration.result) {
+			localStorage.foursquare_token = configuration.token;
+			notifyPebbleConnected(localStorage.foursquare_token.toString());
 			isNewList = true;
 			getClosestVenues();
 		} else {
-			//Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
+			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
 		}
 		
 // 		if(configuration.theme !== null && configuration.unit !== null) {
@@ -46,12 +50,13 @@ Pebble.addEventListener('webviewclosed',
 // 			localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
 // 			notifyPebbleConfiguration(configuration.theme);
 // 		}
-	});
+	}
+);
 
 function notifyPebbleConnected(token) {
-// 	console.log('sending token');
+// 	console.log("Sending the token: " + token);
 	Pebble.sendAppMessage({'token':token});
-// 	console.log('sent token');
+// 	console.log("Sent the token: " + token);
 }
 
 function notifyPebbleConfiguration(theme) {
@@ -69,7 +74,8 @@ var error = function(e) {
 };
 
 var success = function(position) {
-	var userToken = localStorage.foursquare_token.toString();
+	var userToken = localStorage.foursquare_token !== null ?
+		localStorage.foursquare_token.toString() : null;
 	if(userToken) {	
 		fetchMostRecentCheckin(userToken);
 		fetchClosestVenues(userToken, position);
@@ -79,7 +85,7 @@ var success = function(position) {
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
-// 	console.log("requestUrl: " + requestUrl);
+//  	console.log("requestUrl: " + requestUrl);
 	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
 		if (req.readyState == 4) {
@@ -112,7 +118,7 @@ function fetchClosestVenues(token, position) {
 						}
 
 						// Send them in clusters of 5
-						if(index % 5 == 1 || index == max_venues)
+// 						if(index % 5 == 1 || index == max_venues/2 || index == max_venues)
 							sendAppMessage();
 					});
 				} else {
@@ -202,7 +208,7 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-// 			console.log('Trying to send a message: ' + currentAppMessage.message.name);
+//  			console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -289,12 +295,13 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 
 Pebble.addEventListener('appmessage',
 	function(e) {
-// 		console.log('received appmessage');
+//  		console.log('received appmessage');
 		if (e.payload.id) {
 // 			console.log('received appmessage id: ' + e.payload.id);
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
 		} else if (e.payload.refresh) {
 // 			console.log('received appmessage: ' + e.payload);
+			max_venues = e.payload.refresh + 1;
 			getClosestVenues();
 		}
 	});

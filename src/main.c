@@ -1,4 +1,4 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "libs/pebble-assist.h"
@@ -15,14 +15,22 @@
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
-	
+
 #define ANIM_DURATION 100
 #define ANIM_DELAY 300
 	
 #define NUM_MENU_SECTIONS 1
-#define NUM_MENU_ITEMS 17
-	
-#define MAX_VENUES 15
+#ifdef PBL_PLATFORM_APLITE
+	#define NUM_MENU_ITEMS 12
+#else
+	#define NUM_MENU_ITEMS 17
+#endif
+
+#ifdef PBL_PLATFORM_APLITE
+	#define MAX_VENUES 10
+#else
+	#define MAX_VENUES 15
+#endif
 
 static SpoonVenue venues[MAX_VENUES];
 static int num_venues;
@@ -79,6 +87,12 @@ static bool is_refreshing;
 
 static GPath *s_check_path = NULL;
 
+static Animation *anim_slide_menu;
+static Animation *anim_slide_box;
+static Animation *anim_slide_circle;
+static Animation *anim_slide_text_1;
+static Animation *anim_slide_text_2;
+
 static PropertyAnimation *s_drop_current_animation;
 static PropertyAnimation *s_drop_last_animation;
 
@@ -90,50 +104,39 @@ static PropertyAnimation *s_transition_menu_animation;
 
 static void getListOfLocations() {
 	is_refreshing = true;
-	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, 1);
+	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
-	
 	if (iter == NULL) {
 		return;
 	}
-
+	text_layer_set_text(text_layer_primary, "Refreshing...");
 	text_layer_set_text(text_layer_primary_address, "");
-	if(up_count == 2) {
-		text_layer_set_text(text_layer_primary, "Refreshing...");
-		up_count = 0;
-	}
-	
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
 	app_message_outbox_send();
 }
 
-static void last_checkin_show();
-
 static void transition_circle_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
-	#ifdef PBL_PLATFORM_APLITE
-  		property_animation_destroy(s_transition_circle_animation);
-		property_animation_destroy(s_transition_box_animation);
-		property_animation_destroy(s_transition_text_1_animation);
-		property_animation_destroy(s_transition_text_2_animation);
+	#ifdef PBL_SDK_2
+		property_animation_destroy((PropertyAnimation*)s_transition_circle_animation);
 	#endif
-
+		
 	layer_mark_dirty(layer_primary_circle);
 	if(!last_mode) {
 		reverse_menu_animation = false;
 	}
 }
 
-static void last_checkin_drop_current_stopped_handler(Animation *animation, bool finished, void *ctx) {
-	#ifdef PBL_PLATFORM_APLITE
-  		property_animation_destroy(s_drop_current_animation);
+static void property_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_SDK_2
+		property_animation_destroy((PropertyAnimation*)animation);
 	#endif
 }
 
-static void last_checkin_drop_last_stopped_handler(Animation *animation, bool finished, void *ctx) {
-	#ifdef PBL_PLATFORM_APLITE
-  		property_animation_destroy(s_drop_last_animation);
+static void anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
+	#ifdef PBL_SDK_2
+		animation_destroy(animation);
 	#endif
 }
 
@@ -141,46 +144,52 @@ static void last_checkin_show() {
 	GRect box_start, box_finish;
 	GRect last_start, last_finish;
 	GRect fab_start, fab_finish;
-	
+
 	box_start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
 	box_finish = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, BOX_HEIGHT + 10);
 	last_start = GRect(0, 0 - SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
 	last_finish = GRect(0, 20 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
 	fab_start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
 	fab_finish =  GRect(-94, -45 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
-	
+
 	if(reverse_last_animation) {
 		last_mode = false;
 	} else {
 		last_mode = true;
 	}
-	
+
 	// Drop Current Venue
 	s_drop_current_animation = reverse_last_animation 
 		? property_animation_create_layer_frame(layer_primary_back, &box_finish, &box_start)
 		: property_animation_create_layer_frame(layer_primary_back, &box_start, &box_finish);
+	if(animation_is_scheduled((Animation*)s_drop_current_animation)) {
+		animation_unschedule((Animation*)s_drop_current_animation);
+	}
 	animation_set_duration((Animation*)s_drop_current_animation, ANIM_DURATION);
-	animation_set_delay((Animation*)s_drop_current_animation, ANIM_DELAY);
-	animation_set_curve((Animation*)s_drop_current_animation, AnimationCurveEaseOut);
 	animation_set_handlers((Animation*)s_drop_current_animation, (AnimationHandlers) {
-		.stopped = last_checkin_drop_current_stopped_handler
+		.stopped = property_anim_stopped_handler
 	}, NULL);
-	animation_schedule((Animation*)s_drop_current_animation);
+ 	animation_set_delay((Animation*)s_drop_current_animation, ANIM_DELAY);
+	animation_set_curve((Animation*)s_drop_current_animation, AnimationCurveEaseOut);
+	if(!animation_is_scheduled((Animation*)s_drop_current_animation)) {
+		animation_schedule((Animation*)s_drop_current_animation);
+	}
 
 	// Drop Last Checkin
 	s_drop_last_animation = reverse_last_animation
 		? property_animation_create_layer_frame(layer_last_checkin, &last_finish, &last_start)
 		: property_animation_create_layer_frame(layer_last_checkin, &last_start, &last_finish);
 	animation_set_duration((Animation*)s_drop_last_animation, ANIM_DURATION);
+	animation_set_handlers((Animation*)s_drop_last_animation, (AnimationHandlers) {
+		.stopped = property_anim_stopped_handler
+	}, NULL);
 	animation_set_delay((Animation*)s_drop_last_animation, ANIM_DELAY);
 	animation_set_curve((Animation*)s_drop_last_animation, AnimationCurveEaseIn);
-	animation_set_handlers((Animation*)s_drop_last_animation, (AnimationHandlers) {
-		.stopped = last_checkin_drop_last_stopped_handler
-	}, NULL);
-	animation_schedule((Animation*)s_drop_last_animation);
-	
+	if(!animation_is_scheduled((Animation*)s_drop_last_animation)) {
+		animation_schedule((Animation*)s_drop_last_animation);
+	}
 	drop_and_shrink = last_mode;
-	
+
 	// FAB
 	s_transition_circle_animation = reverse_last_animation
 		? property_animation_create_layer_frame(layer_primary_circle, &fab_finish, &fab_start)
@@ -191,13 +200,9 @@ static void last_checkin_show() {
 	animation_set_handlers((Animation*)s_transition_circle_animation, (AnimationHandlers) {
 		.stopped = transition_circle_anim_stopped_handler
 	}, NULL);
-	animation_schedule(anim_slide_circle);
-}
-
-static void transition_menu_anim_stopped_handler(Animation *animation, bool finished, void *ctx) {
-	#ifdef PBL_PLATFORM_APLITE
-  		property_animation_destroy(s_transition_menu_animation);
-	#endif
+	if(!animation_is_scheduled((Animation*)anim_slide_circle)) {
+		animation_schedule(anim_slide_circle);
+	}
 }
 
 static void transition_animation() {
@@ -211,27 +216,31 @@ static void transition_animation() {
 		s_transition_box_animation = 
 			property_animation_create_layer_frame(layer_primary_back, &start, &finish);
 	}
-	Animation *anim_slide_box = 
+	
+	anim_slide_box = 
 		property_animation_get_animation(s_transition_box_animation);
 	animation_set_duration(anim_slide_box, 500);
-	animation_schedule(anim_slide_box);
 	layer_mark_dirty(layer_primary_back);
-	
+	animation_set_handlers(anim_slide_box, (AnimationHandlers) {
+		.stopped = anim_stopped_handler
+	}, NULL);
+
 	// FAB
 	start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
 	finish = GRect(0, 144, SCREEN_WIDTH, 168);
 	s_transition_circle_animation = reverse_menu_animation
 		? property_animation_create_layer_frame(layer_primary_circle, &finish, &start)
 		: property_animation_create_layer_frame(layer_primary_circle, &start, &finish);
-
-	Animation *anim_slide_circle = 
+	anim_slide_circle =
 		property_animation_get_animation(s_transition_circle_animation);
-	animation_set_duration(anim_slide_circle, 500);
+	animation_set_duration(anim_slide_circle, 100);
+	animation_set_handlers(anim_slide_circle, (AnimationHandlers) {
+		.stopped = anim_stopped_handler
+	}, NULL);
 	animation_set_handlers((Animation*)s_transition_circle_animation, (AnimationHandlers) {
 		.stopped = transition_circle_anim_stopped_handler
 	}, NULL);
-	animation_schedule(anim_slide_circle);
-	
+
 	// Text 1
 	start = GRect(10, 10, 124, 50);
 	finish = GRect(10, 15, 102, 24);
@@ -246,13 +255,15 @@ static void transition_animation() {
 		s_transition_text_1_animation = 
 			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary), &start, &finish);
 	}
-	Animation *anim_slide_text_1 = 
+	anim_slide_text_1 = 
 		property_animation_get_animation(s_transition_text_1_animation);
-	animation_set_duration(anim_slide_text_1, 500);
-	animation_schedule(anim_slide_text_1);
+	animation_set_duration(anim_slide_text_1, 100);
+	animation_set_handlers(anim_slide_text_1, (AnimationHandlers) {
+		.stopped = anim_stopped_handler
+	}, NULL);
 	text_layer_set_size(text_layer_primary,GSize(102,24));
 	text_layer_set_text(text_layer_primary, venues[0].name);
-	
+
 	// Text 2
 	start = GRect(10, 60, 124, 20);
 	finish = GRect(10, 39, 102, 20);
@@ -267,12 +278,16 @@ static void transition_animation() {
 		s_transition_text_2_animation = 
 			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary_address), &start, &finish);
 	}
-	Animation *anim_slide_text_2 = 
+	anim_slide_text_2 = 
 		property_animation_get_animation(s_transition_text_2_animation);
-	animation_set_duration(anim_slide_text_2, 500);
-	animation_schedule(anim_slide_text_2);
-	text_layer_set_size(text_layer_primary_address,GSize(102,20));
+	animation_set_handlers(anim_slide_text_2, (AnimationHandlers) {
+		.stopped = anim_stopped_handler
+	}, NULL);
+	animation_set_duration(anim_slide_text_2, 100);
 	
+	// TODO: Fix this line, it is crashing
+// 	text_layer_set_size(text_layer_primary_address,GSize(102,20));
+
 	// Menu
 	start = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
 	#ifdef PBL_COLOR
@@ -290,13 +305,37 @@ static void transition_animation() {
 			property_animation_create_layer_frame(menu_layer_get_layer(layer_menu_venues), &start, &finish);
 		menu_mode = true;
 	}
-	Animation *anim_slide_menu = 
+	
+	anim_slide_menu = 
 		property_animation_get_animation(s_transition_menu_animation);
-	animation_set_duration(anim_slide_menu, 500);
+	animation_set_duration(anim_slide_menu, 100);
 	animation_set_handlers((Animation*)s_transition_menu_animation, (AnimationHandlers) {
-		.stopped = transition_menu_anim_stopped_handler
+		.stopped = property_anim_stopped_handler
 	}, NULL);
-	animation_schedule(anim_slide_menu);
+	animation_set_handlers(anim_slide_menu, (AnimationHandlers) {
+		.stopped = anim_stopped_handler
+	}, NULL);
+	
+	#ifdef PBL_SDK_3
+ 		Animation *spawn = animation_spawn_create(anim_slide_box, anim_slide_circle, anim_slide_text_1, anim_slide_text_2, anim_slide_menu, NULL);
+		animation_schedule(spawn);
+	#else
+		if(!animation_is_scheduled((Animation*)anim_slide_box)) {
+			animation_schedule(anim_slide_box);
+		}
+		if(!animation_is_scheduled((Animation*)anim_slide_circle)) {
+			animation_schedule(anim_slide_circle);
+		}
+		if(!animation_is_scheduled((Animation*)anim_slide_text_1)) {
+			animation_schedule(anim_slide_text_1);
+		}
+		if(!animation_is_scheduled((Animation*)anim_slide_text_2)) {
+			animation_schedule(anim_slide_text_2);
+		}
+		if(!animation_is_scheduled((Animation*)anim_slide_menu)) {
+			animation_schedule(anim_slide_menu);
+		}
+	#endif
 }
 
 void circle_grow_timer_tick() {
@@ -320,22 +359,26 @@ static void up_single_click_handler(ClickRecognizerRef recognizer, void *context
 	if(no_foursquare) {
 	} else {
 		if(menu_mode) {
+			up_count = 0;
 			if(menu_layer_get_selected_index(layer_menu_venues).row == 1) {
 				reverse_menu_animation = true;
 				menu_mode = false;
 				transition_animation();
 			}
+
 			menu_layer_set_selected_next(layer_menu_venues, true, MenuRowAlignCenter, true);
 		} else if(last_mode) {
 			up_count++;
 			if(up_count == 2) {
 				getListOfLocations();
+				
 				// Return to venue list
 				reverse_last_animation = true;
 				last_checkin_show();
 			}
 			// TODO: Add bounce anim
 		} else {
+			up_count = 0;
 			if(strlen(lastCheckinVenue.name) > 0) {
 				reverse_last_animation = false;
 				last_checkin_show();
@@ -420,6 +463,9 @@ static void click_config_provider(void *context) {
 void draw_image_layer_back(Layer *cell_layer, GContext *ctx) {
 	#ifdef PBL_COLOR
 		draw_transitioning_rect(ctx, GRect(0,0,144,168), (GColor)back_color, (GColor)new_back_color);
+	#else
+		graphics_context_set_fill_color(ctx, GColorDarkGray);
+		graphics_fill_rect(ctx, GRect(0,0,144,168/2), 0, GCornersTop);
 	#endif
 }
 
@@ -428,7 +474,7 @@ void draw_layer_primary_back(Layer *cell_layer, GContext *ctx) {
 		graphics_context_set_fill_color(ctx, (GColor)back_color);
 		graphics_fill_rect(ctx, GRect(0,0,144,94), 0, GCornerNone);
 	#else
-		graphics_context_set_fill_color(ctx, GColorBlack);
+		graphics_context_set_fill_color(ctx, GColorWhite);
 		graphics_fill_rect(ctx, GRect(0,0,144,2), 0, GCornersTop);
 	#endif
 }
@@ -447,7 +493,7 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 	} else if(drop_and_shrink) {
 		#if PBL_COLOR
 			graphics_context_set_fill_color(ctx, (GColor)accent_color);
-			graphics_context_set_stroke_width(ctx, 5);
+			graphics_context_set_stroke_width(ctx, 2);
 		#else
 			graphics_context_set_fill_color(ctx, GColorBlack);
 		#endif
@@ -601,10 +647,10 @@ static void window_load(Window *window) {
 		// TODO: Show image from the first venue, maybe
 		start_transitioning_rect(layer_back, 100, 1);
 	#endif
-		
+	
 	// Last Checkin
 	layer_last_checkin = layer_create(GRect(0,0-bounds.size.h, bounds.size.w, bounds.size.h));
-	
+
 	// Title
 	text_layer_last_checkin_title = text_layer_create(GRect(40,7,bounds.size.w,20));
 	text_layer_set_text_color(text_layer_last_checkin_title, GColorBlack);
@@ -613,16 +659,16 @@ static void window_load(Window *window) {
 	text_layer_set_text_alignment(text_layer_last_checkin_title, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_last_checkin_title, "Last Check-In");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_title));
-	
+
 	// Venue
-	text_layer_last_checkin_venue = text_layer_create(GRect(10,40,bounds.size.w-10,74));
+	text_layer_last_checkin_venue = text_layer_create(GRect(10,74,bounds.size.w-10,74));
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
-	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
+	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
 	text_layer_set_text_alignment(text_layer_last_checkin_venue, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_last_checkin_venue, "Venue Name");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
-	
+
 	text_layer_last_checkin_date = text_layer_create(GRect(10,124,bounds.size.w,20));
 	text_layer_set_text_color(text_layer_last_checkin_date, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_date, GColorClear);
@@ -631,10 +677,10 @@ static void window_load(Window *window) {
 
 	text_layer_set_text(text_layer_last_checkin_date, "at sometime...");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_date));
-	
+
 	// TODO: Not sure about address placement here...
 	//layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_address));
-	
+
 	layer_add_child(window_layer, layer_last_checkin);
 	
 	// Menu
@@ -653,10 +699,13 @@ static void window_load(Window *window) {
 	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_COG);
 	
 	#ifdef PBL_SDK_3
-		menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
-		menu_layer_set_highlight_colors(layer_menu_venues, GColorWhite, GColorBlack);
-	#else
-		
+		#ifdef PBL_COLOR
+			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
+			menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorWhite);
+		#else
+			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorBlack);
+			menu_layer_set_highlight_colors(layer_menu_venues, GColorBlack, GColorWhite);
+		#endif
 	#endif
 	layer_add_child(window_layer, menu_layer_get_layer(layer_menu_venues));
 
@@ -694,7 +743,11 @@ static void window_load(Window *window) {
 	#ifdef PBL_SDK_3
 		s_status_bar = status_bar_layer_create();
 		status_bar_layer_set_separator_mode(s_status_bar, StatusBarLayerSeparatorModeDotted);
-		status_bar_layer_set_colors(s_status_bar, GColorClear, GColorBlack);
+		#ifdef PBL_COLOR
+			status_bar_layer_set_colors(s_status_bar, GColorClear, GColorBlack);
+		#else
+			status_bar_layer_set_colors(s_status_bar, GColorWhite, GColorBlack);
+		#endif
 		layer_add_child(
 			window_layer, status_bar_layer_get_layer(s_status_bar));
 	#endif
@@ -758,6 +811,8 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
 	Tuple *text_tuple_config = dict_find(iter, SPOON_CONFIG);
 	
+// 	APP_LOG(APP_LOG_LEVEL_DEBUG, "In received");
+	
 	if(text_tuple_error) {
 		text_layer_set_text(text_layer_primary, text_tuple_error->value->cstring);
 	} else if(text_tuple_config) {
@@ -772,6 +827,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			getListOfLocations();
 		}
 	} else if(text_tuple_token && !text_tuple_latlng) {
+// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Token: %s", text_tuple_token->value->cstring);
 		text_layer_set_text(text_layer_primary, "Connected to Foursquare!");
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
 		persist_exists(KEY_TOKEN);
@@ -831,6 +887,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 }
 
 void in_dropped_handler(AppMessageResult reason, void *context) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message.");
    	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
 }
 
@@ -838,8 +895,8 @@ static void init(void) {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
-	app_message_register_outbox_failed(out_failed_handler);	
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	app_message_register_outbox_failed(out_failed_handler);
+	app_message_open(128, 64);
 	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
@@ -857,17 +914,30 @@ static void deinit(void) {
 	text_layer_destroy_safe(text_layer_last_checkin_venue);
 	text_layer_destroy_safe(text_layer_last_checkin_address);
 	text_layer_destroy_safe(text_layer_last_checkin_date);
+
 	layer_destroy_safe(layer_last_checkin);
 	text_layer_destroy_safe(text_layer_primary);
 	text_layer_destroy_safe(text_layer_primary_address);
 	layer_destroy_safe(layer_primary_back);
 	layer_destroy_safe(layer_back);
+
 	bitmap_layer_destroy_safe(image_layer_back);
 	gbitmap_destroy(image_cog);
 	gbitmap_destroy(image_refresh);
+
 	window_destroy_safe(s_main_window);
 	checkin_deinit();
 	checkin_menu_deinit();
+
+	#ifdef PBL_SDK_2
+		property_animation_destroy(s_drop_current_animation);
+		property_animation_destroy(s_drop_last_animation);
+		property_animation_destroy(s_transition_menu_animation);
+		property_animation_destroy(s_transition_circle_animation);
+		property_animation_destroy(s_transition_box_animation);
+		property_animation_destroy(s_transition_text_1_animation);
+		property_animation_destroy(s_transition_text_2_animation);
+	#endif
 }
 
 int main(void) {

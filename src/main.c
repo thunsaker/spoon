@@ -896,7 +896,7 @@ static void init(void) {
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
-	app_message_open(128, 64);
+	app_message_open(128, 128);
 	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);

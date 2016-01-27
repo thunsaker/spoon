@@ -110,8 +110,7 @@ static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, v
 			break;
 		case 2:
 			vibes_double_pulse();
-			// TODO: Add the FB/Twitter Stuff
-			checkin_send_request(venueid, venuename, 0, twitter, facebook, true);
+			checkin_send_request(venueid, venuename, 0, twitter ? 1 : 0, facebook ? 1 : 0, true);
 			break;
 	}
 }

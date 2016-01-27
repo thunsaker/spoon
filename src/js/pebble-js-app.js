@@ -208,7 +208,7 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-//  			console.log('Trying to send a message: ' + currentAppMessage.message.name);
+//  		console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -238,6 +238,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 			navigator.geolocation.getCurrentPosition(function(position) {
 				var req = new XMLHttpRequest();
 				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&venueId=' + id + api_mode;
+// 				console.log("checkinRequestUrl: " + checkinRequestUrl);
 				var broadcastType = '';
 				if(private == 1) {
 					broadcastType = 'private';
@@ -253,6 +254,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 				if(broadcastType.length > 0) {
 					checkinRequestUrl += '&broadcast=' + broadcastType;
 				}
+// 				console.log("After broadcast checkinRequestUrl: " + checkinRequestUrl);
 				
 				req.open('POST', checkinRequestUrl, true);
 				req.onload = function(e) {

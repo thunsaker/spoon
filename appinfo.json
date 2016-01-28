@@ -57,10 +57,11 @@
     "shortName": "Spoon",
     "targetPlatforms": [
         "aplite",
-        "basalt"
+        "basalt",
+        "chalk"
     ],
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
-    "versionLabel": "2.06",
+    "versionLabel": "2.1",
     "watchapp": {
         "watchface": false
     }

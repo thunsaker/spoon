@@ -1,4 +1,4 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 #pragma once
 	
@@ -9,6 +9,6 @@
 	
 void checkin_show(void);
 void checkin_send_request(char venue_guid[128], char venue_name[512], int private, int twitter, int facebook, bool show_checkin);
-void checkin_in_received_handler(DictionaryIterator *iter);
+// void checkin_in_received_handler(DictionaryIterator *iter);
 void checkin_result_receiver(bool result);
 void checkin_deinit(void);

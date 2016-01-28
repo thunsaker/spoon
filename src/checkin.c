@@ -1,10 +1,11 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "checkin.h"
 #include "colors.h"
 #include "common.h"
 #include "libs/pebble-assist.h"
+#include "paths.h"
 
 static Window *s_main_window;
 #ifdef PBL_SDK_3
@@ -33,14 +34,6 @@ static int pulse = 0;
 static int progress = 100;
 
 static GPath *s_check_large_path = NULL;
-static const GPathInfo CHECK_LARGE_PATH_POINTS = {
-  7,
-  (GPoint []) {{45,65},{35,77},{62,111},{115,42},{103,29},{62,87},{45,65}}
-};
-static const GPathInfo CHECK_LARGE_2_PATH_POINTS = {
-  7,
-  (GPoint []) {{50,67},{41,76},{64,104},{108,46},{99,36},{64,85},{50,67}}
-};
 
 void checkin_show(void);
 static void countdown_tick(void *ctx);
@@ -62,12 +55,17 @@ static void countdown_tick(void *ctx) {
 	if(progress > 0) {
 		start_countdown();
 	} else {
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
-		window_stack_pop_all(true);
+// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
+// 		#ifdef PBL_SDK_3
+			window_stack_pop_all(true);
+// 		#else
+// 			window_stack_pop(s_main_window);
+// 		#endif
 	}
 }
 
 void checkin_send_request(char venue_guid[128], char venue_name[512], int private, int twitter, int facebook, bool show_checkin) {
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Private: %i Twitter: %i Facebook: %i", private, twitter, facebook);
 	if(venue_guid) {
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
 		Tuplet name_tuple = TupletCString(SPOON_NAME,  venue_name);
@@ -246,6 +244,10 @@ static void init(void) {
 void checkin_deinit(void) {
 	layer_destroy_safe(layer_back);
 	layer_destroy_safe(layer_check);
+	text_layer_destroy_safe(text_layer_status);
+	#ifdef PBL_SDK_3
+		layer_destroy_safe(layer_countdown_bar);
+	#endif
 	window_destroy_safe(s_main_window);
 }
 

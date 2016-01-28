@@ -1,4 +1,4 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "libs/pebble-assist.h"
@@ -26,7 +26,7 @@ static GBitmap *check_bitmap;
 static bool twitter;
 static bool facebook;
 
-#if PBL_SDK_3
+#if PBL_COLOR
 void share_menu_draw_layer_bar(Layer *cell_layer, GContext *ctx) {
 	graphics_context_set_fill_color(ctx, (GColor)get_primary_color());
 	graphics_fill_rect(ctx, GRect(0,0,15,168), 8, GCornerNone);
@@ -111,8 +111,7 @@ static void menu_select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, v
 			break;
 		case 2:
 			vibes_double_pulse();
-			// TODO: Add the FB/Twitter Stuff
-			checkin_send_request(venueid, venuename, 0, twitter, facebook, true);
+			checkin_send_request(venueid, venuename, 0, twitter ? 1 : 0, facebook ? 1 : 0, true);
 			break;
 	}
 }
@@ -147,12 +146,17 @@ static void window_load(Window *window) {
 	
 	menu_layer_set_click_config_onto_window(s_menu_layer, window);
 	#ifdef PBL_SDK_3
-		menu_layer_set_normal_colors(s_menu_layer, GColorBlack, GColorLightGray);
-		menu_layer_set_highlight_colors(s_menu_layer, GColorBlack, GColorWhite);
+		#ifdef PBL_COLOR
+			menu_layer_set_normal_colors(s_menu_layer, GColorBlack, GColorLightGray);
+			menu_layer_set_highlight_colors(s_menu_layer, GColorBlack, (GColor)get_primary_color());
+		#else
+			menu_layer_set_normal_colors(s_menu_layer, GColorWhite, GColorBlack);
+			menu_layer_set_highlight_colors(s_menu_layer, GColorBlack, GColorWhite);
+		#endif
 	#endif
 	layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
 	
-	#if PBL_SDK_3
+	#if PBL_COLOR
 		layer_bar = layer_create(GRect(0,0,15,bounds.size.h));
 		layer_set_update_proc(layer_bar, share_menu_draw_layer_bar);
 		layer_add_child(window_layer, layer_bar);

@@ -1,4 +1,4 @@
-// 2015 Thomas Hunsaker @thunsaker
+// 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
 #include "libs/pebble-assist.h"
@@ -122,8 +122,13 @@ static void window_load(Window *window) {
 	
 	menu_layer_set_click_config_onto_window(s_menu_layer, window);
 	#ifdef PBL_SDK_3
-		menu_layer_set_normal_colors(s_menu_layer, GColorBlack, GColorLightGray);
-		menu_layer_set_highlight_colors(s_menu_layer, GColorBlack, GColorWhite);
+		#ifdef PBL_COLOR
+			menu_layer_set_normal_colors(s_menu_layer, GColorBlack, GColorLightGray);
+			menu_layer_set_highlight_colors(s_menu_layer, GColorBlack, (GColor)get_primary_color());
+		#else
+			menu_layer_set_normal_colors(s_menu_layer, GColorWhite, GColorBlack);
+			menu_layer_set_highlight_colors(s_menu_layer, GColorBlack, GColorWhite);
+		#endif
 	#endif
 	layer_add_child(window_layer, menu_layer_get_layer(s_menu_layer));
 

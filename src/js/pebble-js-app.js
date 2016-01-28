@@ -34,22 +34,16 @@ Pebble.addEventListener('showConfiguration',
 	});
 
 Pebble.addEventListener('webviewclosed',
-	function(e) {
-		// TODO: Remove this before push :)
-		localStorage.foursquare_token = "CTPZ2UOGBNQU2403Y2CMK3PEG31VVXLBLLM1IYTPR5SNCKWD";
-		notifyPebbleConnected(localStorage.foursquare_token.toString());
-		isNewList = true;
-		getClosestVenues();
-		
-// 		var configuration = JSON.parse(e.response);
-// 		if(configuration.result) {
-//  			localStorage.foursquare_token = configuration.token;
-// 			notifyPebbleConnected(localStorage.foursquare_token.toString());
-// 			isNewList = true;
-// 			getClosestVenues();
-// 		} else {
-// 			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
-// 		}
+	function(e) {	
+		var configuration = JSON.parse(e.response);
+		if(configuration.result) {
+ 			localStorage.foursquare_token = configuration.token;
+			notifyPebbleConnected(localStorage.foursquare_token.toString());
+			isNewList = true;
+			getClosestVenues();
+		} else {
+			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
+		}
 		
 // 		if(configuration.theme !== null && configuration.unit !== null) {
 // 			localStorage.spoon_theme = configuration.theme;

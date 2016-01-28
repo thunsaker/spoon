@@ -44,20 +44,17 @@ void locale_init(void) {
   dict_write_begin(&s_locale_dict, (uint8_t*)dict_buffer, dict_buffer_size);
 
   for (int i = 0; i < locale_entries; i++) {
-    resource_offset += resource_load_byte_range(locale_handle, resource_offset, 
-        (uint8_t*)&locale_info, sizeof(struct locale));
-
-    struct Tuplet tupl = {
-      .type = TUPLE_CSTRING, 
-      .key = locale_info.hashval, 
-      .cstring.length = locale_info.strlen};
-
-    tupl.cstring.data = malloc(tupl.cstring.length);
-
-    resource_offset += resource_load_byte_range(locale_handle, 
-        resource_offset, (uint8_t*)tupl.cstring.data, tupl.cstring.length);
-
-    dict_write_tuplet(&s_locale_dict, &tupl);
+    resource_offset += resource_load_byte_range(locale_handle,
+                                                resource_offset,
+                                                (uint8_t*)&locale_info,
+                                                sizeof(struct locale));
+    char *buffer = malloc(locale_info.strlen);
+    resource_offset += resource_load_byte_range(locale_handle,
+                                                resource_offset,
+                                                (uint8_t*)buffer,
+                                                locale_info.strlen);
+    dict_write_cstring(&s_locale_dict, locale_info.hashval, buffer);
+    free(buffer);
   }
 
   dict_write_end(&s_locale_dict);

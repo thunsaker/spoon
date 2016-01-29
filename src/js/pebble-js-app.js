@@ -34,7 +34,7 @@ Pebble.addEventListener('showConfiguration',
 	});
 
 Pebble.addEventListener('webviewclosed',
-	function(e) {
+	function(e) {	
 		var configuration = JSON.parse(e.response);
 		if(configuration.result) {
  			localStorage.foursquare_token = configuration.token;

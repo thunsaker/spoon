@@ -56,16 +56,12 @@ static void countdown_tick(void *ctx) {
 		start_countdown();
 	} else {
 // 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
-// 		#ifdef PBL_SDK_3
 			window_stack_pop_all(true);
-// 		#else
-// 			window_stack_pop(s_main_window);
-// 		#endif
 	}
 }
 
 void checkin_send_request(char venue_guid[128], char venue_name[512], int private, int twitter, int facebook, bool show_checkin) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Private: %i Twitter: %i Facebook: %i", private, twitter, facebook);
+// 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Private: %i Twitter: %i Facebook: %i", private, twitter, facebook);
 	if(venue_guid) {
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
 		Tuplet name_tuple = TupletCString(SPOON_NAME,  venue_name);

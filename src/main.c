@@ -157,8 +157,9 @@ static void last_checkin_show() {
 		fab_start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
 		fab_finish =  GRect(0, STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
 	#else
-		fab_start = GRect(30, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
-		fab_finish =  GRect(SCREEN_WIDTH, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+		fab_start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+// 		fab_finish = GRect(SCREEN_WIDTH, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+		fab_finish = GRect(-94, -45 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
 	#endif
 
 	if(reverse_last_animation) {
@@ -235,7 +236,7 @@ static void transition_animation() {
 	}, NULL);
 
 	// FAB
-	start = GRect(PBL_IF_ROUND_ELSE(0, 30), 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
 	finish = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
 	s_transition_circle_animation = reverse_menu_animation
 		? property_animation_create_layer_frame(layer_primary_circle, &finish, &start)

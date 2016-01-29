@@ -594,47 +594,41 @@ static int16_t menu_get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *c
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) { }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-	if(cell_index->row == NUM_MENU_ITEMS - 1) {
-		#ifdef PBL_COLOR
+	#ifdef PBL_PLATFORM_APLITE
+		if(cell_index->row == NUM_MENU_ITEMS - 1) {
+			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
+		} else {
+			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
+		}
+	#else
+		GRect bounds = layer_get_bounds(cell_layer);
+		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+		GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+		if(cell_index->row == NUM_MENU_ITEMS - 1) {
+			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
 			#ifdef PBL_ROUND
-				GRect bounds = layer_get_bounds(cell_layer);
-				GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 				graphics_draw_text(ctx, "Powered by Foursquare", little_font,
- 								   GRect(10, (bounds.size.h/2) - 15, bounds.size.w - 20, 25),
+								   GRect(10, (bounds.size.h/2) - 15, bounds.size.w - 20, 25),
 								   GTextOverflowModeTrailingEllipsis, 
 								   GTextAlignmentCenter,
-								   NULL);
-		
-				GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
+								   NULL);			
 				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
-										(bounds.size.h/2) + 5,
-										bitmap_bounds.size.w, bitmap_bounds.size.h);
-				graphics_context_set_compositing_mode(ctx, GCompOpSet);
-				graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
+										 (bounds.size.h/2) + 5,
+										 bitmap_bounds.size.w, bitmap_bounds.size.h);
 			#else
-				GRect bounds = layer_get_bounds(cell_layer);
-				GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 				graphics_draw_text(ctx, "Powered by Foursquare", little_font,
-								  GRect(5, 4, bounds.size.w - 10, 20),
-								  GTextOverflowModeFill,
-								  GTextAlignmentCenter,
-								  NULL);
-
-				GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
+								   GRect(5, 4, bounds.size.w - 10, 20),
+								   GTextOverflowModeFill,
+								   GTextAlignmentCenter,
+								   NULL);
 				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
-										30,
-										bitmap_bounds.size.w, bitmap_bounds.size.h);
-				graphics_context_set_compositing_mode(ctx, GCompOpSet);
-				graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
+										 30,
+										 bitmap_bounds.size.w, bitmap_bounds.size.h);
 			#endif
-		#else
-			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
-		#endif	
-	} else {
-		#ifdef PBL_COLOR
+			graphics_context_set_compositing_mode(ctx, GCompOpSet);
+			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
+		} else {
 			#ifdef PBL_ROUND
-				GRect bounds = layer_get_bounds(cell_layer);
-				GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
 				GSize text_size = graphics_text_layout_get_content_size(
 					venues[cell_index->row].name,
 					big_font,
@@ -642,35 +636,29 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 					GTextOverflowModeTrailingEllipsis, 
 					GTextAlignmentCenter);
 				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
- 								   GRect(10, text_size.h > 25 ? 7 : 20, bounds.size.w - 20, 50),
+								   GRect(10, text_size.h > 25 ? 7 : 20, bounds.size.w - 20, 50),
 								   GTextOverflowModeTrailingEllipsis, 
 								   GTextAlignmentCenter,
 								   NULL);
-				GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
 								   GRect(10, bounds.size.h-24, bounds.size.w - 20, 20),
 								   GTextOverflowModeTrailingEllipsis, 
 								   GTextAlignmentCenter,
 								   NULL);
 			#else
-				GRect bounds = layer_get_bounds(cell_layer);
-				GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
 				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
 								   GRect(5, 4, bounds.size.w - 10, 25),
 								   GTextOverflowModeTrailingEllipsis, 
 								   GTextAlignmentLeft,
 								   NULL);
-				GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
 								   GRect(5, 30, bounds.size.w - 10, 20),
 								   GTextOverflowModeTrailingEllipsis, 
 								   GTextAlignmentLeft,
 								   NULL);
 			#endif
-		#else
-			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
-		#endif
-	}
+		}
+	#endif
 }
 
 #ifdef PBL_COLOR

@@ -33,12 +33,9 @@ enum {
 #define KEY_TOKEN 10
 #define KEY_THEME 20
 	
-#define SCREEN_WIDTH 144
 #ifdef PBL_SDK_3
-	#define SCREEN_HEIGHT 168
 	#define STATUS_BAR_OFFSET 0
 #else
-	#define SCREEN_HEIGHT 156
 	#define STATUS_BAR_OFFSET 12
 #endif
 	

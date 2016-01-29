@@ -38,6 +38,9 @@ static SpoonVenue lastCheckinVenue;
 static char venueid[128];
 static char venuename[512];
 
+static int SCREEN_HEIGHT;
+static int SCREEN_WIDTH;
+
 static Window *s_main_window;
 #ifdef PBL_SDK_3
 	static StatusBarLayer *s_status_bar;
@@ -69,6 +72,7 @@ static GBitmap *image_refresh;
 #define MAX_CIRCLE_RADIUS 142
 #define DEFAULT_CIRCLE_RADIUS 21
 #define DEFAULT_CIRCLE_RADIUS_MINI 15
+#define DEFAULT_CIRCLE_RADIUS_ROUND 80
 
 static bool show_checkin;
 static bool grow_circle;
@@ -146,11 +150,16 @@ static void last_checkin_show() {
 	GRect fab_start, fab_finish;
 
 	box_start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT);
-	box_finish = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, BOX_HEIGHT + 10);
+	box_finish = GRect(0, PBL_IF_ROUND_ELSE(SCREEN_HEIGHT + 5, SCREEN_HEIGHT), SCREEN_WIDTH, BOX_HEIGHT + 10);
 	last_start = GRect(0, 0 - SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
 	last_finish = GRect(0, 20 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
-	fab_start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
-	fab_finish =  GRect(-94, -45 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
+	#ifdef PBL_ROUND
+		fab_start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+		fab_finish =  GRect(0, STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	#else
+		fab_start = GRect(30, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+		fab_finish =  GRect(SCREEN_WIDTH, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	#endif
 
 	if(reverse_last_animation) {
 		last_mode = false;
@@ -207,7 +216,7 @@ static void last_checkin_show() {
 
 static void transition_animation() {
 	// Primary Back
-	GRect start = GRect(0, 84 - STATUS_BAR_OFFSET, SCREEN_WIDTH, BOX_HEIGHT + STATUS_BAR_OFFSET);
+	GRect start = GRect(0, (SCREEN_HEIGHT/2) - STATUS_BAR_OFFSET, SCREEN_WIDTH, (SCREEN_HEIGHT/2) + STATUS_BAR_OFFSET);
 	GRect finish = GRect(0, -10 - ROW_HEIGHT, SCREEN_WIDTH, ROW_HEIGHT + 10);
 	if(reverse_menu_animation) {
 		s_transition_box_animation = 
@@ -226,8 +235,8 @@ static void transition_animation() {
 	}, NULL);
 
 	// FAB
-	start = GRect(0, 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, 168);
-	finish = GRect(0, 144, SCREEN_WIDTH, 168);
+	start = GRect(PBL_IF_ROUND_ELSE(0, 30), 0 - STATUS_BAR_OFFSET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	finish = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
 	s_transition_circle_animation = reverse_menu_animation
 		? property_animation_create_layer_frame(layer_primary_circle, &finish, &start)
 		: property_animation_create_layer_frame(layer_primary_circle, &start, &finish);
@@ -242,8 +251,13 @@ static void transition_animation() {
 	}, NULL);
 
 	// Text 1
-	start = GRect(10, 10, 124, 50);
-	finish = GRect(10, 15, 102, 24);
+	#ifdef PBL_ROUND
+		start = GRect(15, 5, SCREEN_WIDTH-25, 50);
+		finish = GRect(10, 15, SCREEN_WIDTH, 24);
+	#else
+		start = GRect(10, 10, 124, 50);
+		finish = GRect(10, 15, 102, 24);
+	#endif
 	if(reverse_menu_animation) {
 		text_layer_set_text_color(text_layer_primary, GColorBlack);
 		s_transition_text_1_animation = 
@@ -261,12 +275,17 @@ static void transition_animation() {
 	animation_set_handlers(anim_slide_text_1, (AnimationHandlers) {
 		.stopped = anim_stopped_handler
 	}, NULL);
-	text_layer_set_size(text_layer_primary,GSize(102,24));
+	text_layer_set_size(text_layer_primary,GSize(PBL_IF_ROUND_ELSE(SCREEN_WIDTH-25, 102),24));
 	text_layer_set_text(text_layer_primary, venues[0].name);
 
 	// Text 2
-	start = GRect(10, 60, 124, 20);
-	finish = GRect(10, 39, 102, 20);
+	#ifdef PBL_ROUND
+		start = GRect(30, 50, SCREEN_WIDTH-60, 60);
+		finish = GRect(10, 39, 102, 20);
+	#else
+		start = GRect(10, 60, 124, 20);
+		finish = GRect(10, 39, 102, 20);
+	#endif
 	if(reverse_menu_animation) {
 		text_layer_set_text_color(text_layer_primary_address, GColorBlack);
 		s_transition_text_2_animation = 
@@ -290,7 +309,7 @@ static void transition_animation() {
 
 	// Menu
 	start = GRect(0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT);
-	#ifdef PBL_COLOR
+	#ifdef PBL_SDK_3
 		finish = GRect(0, 15, SCREEN_WIDTH, SCREEN_HEIGHT);
 	#else
 		finish = GRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -461,28 +480,30 @@ static void click_config_provider(void *context) {
 }
 
 void draw_image_layer_back(Layer *cell_layer, GContext *ctx) {
+	GRect bounds = layer_get_frame(cell_layer);
 	#ifdef PBL_COLOR
-		draw_transitioning_rect(ctx, GRect(0,0,144,168), (GColor)back_color, (GColor)new_back_color);
+		draw_transitioning_rect(ctx, GRect(0,0,bounds.size.w,168), (GColor)back_color, (GColor)new_back_color);
 	#else
 		graphics_context_set_fill_color(ctx, GColorDarkGray);
-		graphics_fill_rect(ctx, GRect(0,0,144,168/2), 0, GCornersTop);
+		graphics_fill_rect(ctx, GRect(0,0,bounds.size.w,168/2), 0, GCornersTop);
 	#endif
 }
 
 void draw_layer_primary_back(Layer *cell_layer, GContext *ctx) {
+	GRect bounds = layer_get_frame(cell_layer);
 	#ifdef PBL_COLOR
 		graphics_context_set_fill_color(ctx, (GColor)back_color);
-		graphics_fill_rect(ctx, GRect(0,0,144,94), 0, GCornerNone);
+		graphics_fill_rect(ctx, GRect(0,0,bounds.size.w,94), 0, GCornerNone);
 	#else
 		graphics_context_set_fill_color(ctx, GColorWhite);
-		graphics_fill_rect(ctx, GRect(0,0,144,2), 0, GCornersTop);
+		graphics_fill_rect(ctx, GRect(0,0,bounds.size.w,2), 0, GCornersTop);
 	#endif
 }
 
 void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 	if(show_checkin) {
 		if(grow_circle) {
-			#if PBL_COLOR
+			#ifdef PBL_COLOR
 				graphics_context_set_fill_color(ctx, (GColor)accent_color);
 			#else
 				graphics_context_set_fill_color(ctx, GColorBlack);
@@ -491,33 +512,51 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 			graphics_fill_circle(ctx, GPoint(113,81), circle_radius);
 		}
 	} else if(drop_and_shrink) {
-		#if PBL_COLOR
-			graphics_context_set_fill_color(ctx, (GColor)accent_color);
-			graphics_context_set_stroke_width(ctx, 2);
+		#ifdef PBL_ROUND
 		#else
-			graphics_context_set_fill_color(ctx, GColorBlack);
+			#ifdef PBL_COLOR
+				graphics_context_set_fill_color(ctx, (GColor)accent_color);
+				graphics_context_set_stroke_width(ctx, 2);
+			#else
+				graphics_context_set_fill_color(ctx, GColorBlack);
+			#endif
+
+			graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS_MINI);
+
+			graphics_context_set_stroke_color(ctx, GColorWhite);
+			graphics_draw_line(ctx, GPoint(105,81), GPoint(111,86));
+			graphics_draw_line(ctx, GPoint(111,86), GPoint(120,75));
 		#endif
-		graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS_MINI);
-		
-		graphics_context_set_stroke_color(ctx, GColorWhite);
-		graphics_draw_line(ctx, GPoint(105,81), GPoint(111,86));
-		graphics_draw_line(ctx, GPoint(111,86), GPoint(120,75));
 	} else {
+		// Shadow
 		#ifdef PBL_COLOR
-			// Shadow
-			draw_twenty_percent_circle(ctx, 116, 83, DEFAULT_CIRCLE_RADIUS-1, GColorClear, GColorDarkGray);
+			#ifdef PBL_ROUND
+				// Do nothing
+			#else
+				draw_twenty_percent_circle(ctx, 116, 83, DEFAULT_CIRCLE_RADIUS-1, GColorClear, GColorDarkGray);
+			#endif
 			graphics_context_set_fill_color(ctx, (GColor)accent_color);
 		#else
 			graphics_context_set_fill_color(ctx, GColorBlack);
 		#endif
+		
 		// Circle
-		graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS);
+		#ifdef PBL_ROUND
+			graphics_fill_circle(ctx, GPoint(220,SCREEN_HEIGHT/2), DEFAULT_CIRCLE_RADIUS_ROUND);
+		#else
+			graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS);
+		#endif
 		
 		// Icon
 		if(is_refreshing) {
 			GRect bitmap_bounds = gbitmap_get_bounds(image_refresh);
-			GRect refresh_bounds = GRect(102,71,
-										 bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#ifdef PBL_ROUND
+				GRect refresh_bounds = GRect(SCREEN_WIDTH-32,(SCREEN_HEIGHT/2)-(bitmap_bounds.size.h/2),
+											 bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#else
+				GRect refresh_bounds = GRect(102,71,
+											 bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#endif
 			#ifdef PBL_COLOR
 				graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			#endif
@@ -526,7 +565,11 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 			graphics_context_set_fill_color(ctx, GColorWhite);
 			graphics_context_set_stroke_color(ctx, GColorWhite);
 			s_check_path = gpath_create(&CHECK_PATH_POINTS);
-			gpath_move_to(s_check_path, GPoint(101,70));
+			#ifdef PBL_ROUND
+				gpath_move_to(s_check_path, GPoint(146,75));
+			#else
+				gpath_move_to(s_check_path, GPoint(101,70));
+			#endif
 			gpath_draw_filled(ctx, s_check_path);
 		}
 	}
@@ -545,50 +588,77 @@ static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t s
 }
 
 static int16_t menu_get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-	return 52;
+	return PBL_IF_ROUND_ELSE(MENU_CELL_ROUND_FOCUSED_TALL_CELL_HEIGHT, 52);
 }
 
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) { }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-	if(cell_index->row == NUM_MENU_ITEMS - 1) {
-		#ifdef PBL_COLOR
-			GRect bounds = layer_get_bounds(cell_layer);
-			GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-			graphics_draw_text(ctx, "Powered by Foursquare", little_font,
-							  GRect(5, 4, bounds.size.w - 10, 20),
-							  GTextOverflowModeFill,
-							  GTextAlignmentCenter,
-							  NULL);
-		
+	#ifdef PBL_PLATFORM_APLITE
+		if(cell_index->row == NUM_MENU_ITEMS - 1) {
+			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
+		} else {
+			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
+		}
+	#else
+		GRect bounds = layer_get_bounds(cell_layer);
+		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+		GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
-			GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
-									30,
-									bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#ifdef PBL_ROUND
+				graphics_draw_text(ctx, "Powered by Foursquare", little_font,
+								   GRect(10, (bounds.size.h/2) - 15, bounds.size.w - 20, 25),
+								   GTextOverflowModeTrailingEllipsis, 
+								   GTextAlignmentCenter,
+								   NULL);			
+				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
+										 (bounds.size.h/2) + 5,
+										 bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#else
+				graphics_draw_text(ctx, "Powered by Foursquare", little_font,
+								   GRect(5, 4, bounds.size.w - 10, 20),
+								   GTextOverflowModeFill,
+								   GTextAlignmentCenter,
+								   NULL);
+				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
+										 30,
+										 bitmap_bounds.size.w, bitmap_bounds.size.h);
+			#endif
 			graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
-		#else
-			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
-		#endif	
-	} else {
-		#ifdef PBL_COLOR
-			GRect bounds = layer_get_bounds(cell_layer);
-			GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
-			graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
-							   GRect(5, 4, bounds.size.w - 10, 25),
-							   GTextOverflowModeTrailingEllipsis, 
-							   GTextAlignmentLeft,
-							   NULL);
-			GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-			graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
-							   GRect(5, 30, bounds.size.w - 10, 20),
-							   GTextOverflowModeTrailingEllipsis, 
-							   GTextAlignmentLeft,
-							   NULL);
-		#else
-			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
-		#endif
-	}
+		} else {
+			#ifdef PBL_ROUND
+				GSize text_size = graphics_text_layout_get_content_size(
+					venues[cell_index->row].name,
+					big_font,
+					GRect(0, 5, bounds.size.w - 20, 50),
+					GTextOverflowModeTrailingEllipsis, 
+					GTextAlignmentCenter);
+				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
+								   GRect(10, text_size.h > 25 ? 7 : 20, bounds.size.w - 20, 50),
+								   GTextOverflowModeTrailingEllipsis, 
+								   GTextAlignmentCenter,
+								   NULL);
+				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+								   GRect(10, bounds.size.h-24, bounds.size.w - 20, 20),
+								   GTextOverflowModeTrailingEllipsis, 
+								   GTextAlignmentCenter,
+								   NULL);
+			#else
+				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
+								   GRect(5, 4, bounds.size.w - 10, 25),
+								   GTextOverflowModeTrailingEllipsis, 
+								   GTextAlignmentLeft,
+								   NULL);
+				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+								   GRect(5, 30, bounds.size.w - 10, 20),
+								   GTextOverflowModeTrailingEllipsis, 
+								   GTextAlignmentLeft,
+								   NULL);
+			#endif
+		}
+	#endif
 }
 
 #ifdef PBL_COLOR
@@ -621,13 +691,15 @@ static void window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 
 	GRect bounds = layer_get_frame(window_layer);
+	SCREEN_HEIGHT = bounds.size.h;
+	SCREEN_WIDTH = bounds.size.w;
 	
 	#ifdef PBL_COLOR
 		setup_theme_colors(config_get_theme());
 	#endif
 	
 	// Background
-  	#if PBL_COLOR
+  	#ifdef PBL_COLOR
 		accent_color = get_accent_color();
 		back_color = get_back_color();
 		primary_color = get_primary_color();
@@ -652,28 +724,41 @@ static void window_load(Window *window) {
 	layer_last_checkin = layer_create(GRect(0,0-bounds.size.h, bounds.size.w, bounds.size.h));
 
 	// Title
-	text_layer_last_checkin_title = text_layer_create(GRect(40,7,bounds.size.w,20));
+	#ifdef PBL_ROUND
+		text_layer_last_checkin_title = text_layer_create(GRect(0,7,SCREEN_WIDTH,20));
+	#else
+	 	text_layer_last_checkin_title = text_layer_create(GRect(40,7,bounds.size.w,20));
+	#endif
 	text_layer_set_text_color(text_layer_last_checkin_title, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_title, GColorClear);
+	text_layer_set_text_alignment(text_layer_last_checkin_title, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_last_checkin_title, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-	text_layer_set_text_alignment(text_layer_last_checkin_title, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_last_checkin_title, "Last Check-In");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_title));
 
 	// Venue
-	text_layer_last_checkin_venue = text_layer_create(GRect(10,74,bounds.size.w-10,74));
+	#ifdef PBL_ROUND
+		text_layer_last_checkin_venue = text_layer_create(GRect(0,(bounds.size.h/2)-40,SCREEN_WIDTH,74));
+	#else
+	 	text_layer_last_checkin_venue = text_layer_create(GRect(10,74,bounds.size.w-10,74));
+	#endif
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
+	text_layer_set_text_alignment(text_layer_last_checkin_venue, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-	text_layer_set_text_alignment(text_layer_last_checkin_venue, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_last_checkin_venue, "Venue Name");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
 
-	text_layer_last_checkin_date = text_layer_create(GRect(10,124,bounds.size.w,20));
+	// Date
+	#ifdef PBL_ROUND
+		text_layer_last_checkin_date = text_layer_create(GRect(0,(bounds.size.h/2)+10,SCREEN_WIDTH,20));
+	#else
+	 	text_layer_last_checkin_date = text_layer_create(GRect(10,124,bounds.size.w,20));
+	#endif
 	text_layer_set_text_color(text_layer_last_checkin_date, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_date, GColorClear);
+	text_layer_set_text_alignment(text_layer_last_checkin_date, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_last_checkin_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-	text_layer_set_text_alignment(text_layer_last_checkin_date, GTextAlignmentLeft);
 
 	text_layer_set_text(text_layer_last_checkin_date, "at sometime...");
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_date));
@@ -685,7 +770,7 @@ static void window_load(Window *window) {
 	
 	// Menu
 	layer_menu_venues = menu_layer_create(
-		GRect(0,168,bounds.size.w, bounds.size.h));
+		GRect(bounds.origin.x, bounds.origin.y+bounds.size.h, bounds.size.w, bounds.size.h));
 	menu_layer_set_callbacks(layer_menu_venues, NULL, (MenuLayerCallbacks) {
 		.get_num_sections = menu_get_num_sections_callback,
 		.get_num_rows = menu_get_num_rows_callback,
@@ -710,30 +795,41 @@ static void window_load(Window *window) {
 	layer_add_child(window_layer, menu_layer_get_layer(layer_menu_venues));
 
 	// Text Background 1
-	layer_primary_back = layer_create(GRect(0,84 - STATUS_BAR_OFFSET,144,84 + STATUS_BAR_OFFSET));
+	layer_primary_back = layer_create(GRect(0,(bounds.size.h/2) - STATUS_BAR_OFFSET,bounds.size.w, (bounds.size.h/2) + STATUS_BAR_OFFSET));
 	layer_set_update_proc(layer_primary_back, draw_layer_primary_back);
 	layer_add_child(window_layer, layer_primary_back);
 	
 	// Text 1
-	text_layer_primary = text_layer_create(GRect(10,10,124,74));
+	#ifdef PBL_ROUND
+		text_layer_primary = text_layer_create(GRect(15,5,bounds.size.w-25,74));
+   		text_layer_enable_screen_text_flow_and_paging(text_layer_primary, 5);
+	#else
+		text_layer_primary = text_layer_create(GRect(10,10,bounds.size.w-10,74));
+	#endif
 	text_layer_set_text_color(text_layer_primary, GColorBlack);
 	text_layer_set_background_color(text_layer_primary, GColorClear);
+	text_layer_set_text_alignment(text_layer_primary, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-	text_layer_set_text_alignment(text_layer_primary, GTextAlignmentLeft);
 	text_layer_set_overflow_mode(text_layer_primary, GTextOverflowModeTrailingEllipsis);
 	text_layer_set_text(text_layer_primary, "Loading...");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
 
-	text_layer_primary_address = text_layer_create(GRect(10,60,124,20));
+	// Text 2
+	#ifdef PBL_ROUND
+		text_layer_primary_address = text_layer_create(GRect(30,50,bounds.size.w-60,60));
+		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_address, 10);
+	#else
+		text_layer_primary_address = text_layer_create(GRect(10,60,bounds.size.w-10,20));
+	#endif
 	text_layer_set_text_color(text_layer_primary_address, GColorBlack);
 	text_layer_set_background_color(text_layer_primary_address, GColorClear);
+	text_layer_set_text_alignment(text_layer_primary_address, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_primary_address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
-	text_layer_set_text_alignment(text_layer_primary_address, GTextAlignmentLeft);
 	text_layer_set_text(text_layer_primary_address, "");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
 	
 	// FAB	
-	layer_primary_circle = layer_create(GRect(0,0 - STATUS_BAR_OFFSET,bounds.size.w,bounds.size.h));
+	layer_primary_circle = layer_create(GRect(0,PBL_IF_ROUND_ELSE(0,0 - STATUS_BAR_OFFSET),bounds.size.w,bounds.size.h));
  	layer_set_update_proc(layer_primary_circle, draw_layer_primary_circle);
 	layer_add_child(window_layer, layer_primary_circle);
 	
@@ -744,7 +840,7 @@ static void window_load(Window *window) {
 		s_status_bar = status_bar_layer_create();
 		status_bar_layer_set_separator_mode(s_status_bar, StatusBarLayerSeparatorModeDotted);
 		#ifdef PBL_COLOR
-			status_bar_layer_set_colors(s_status_bar, GColorClear, GColorBlack);
+			status_bar_layer_set_colors(s_status_bar, PBL_IF_ROUND_ELSE((GColor)get_primary_color(), GColorClear), GColorBlack);
 		#else
 			status_bar_layer_set_colors(s_status_bar, GColorWhite, GColorBlack);
 		#endif
@@ -864,7 +960,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			}
 			
 			if(venue.index == 0) {
-				text_layer_set_size(text_layer_primary, GSize(124,50));
+				text_layer_set_size(text_layer_primary, GSize(SCREEN_WIDTH-40,50));
 				text_layer_set_text(text_layer_primary, venues[0].name);
 				text_layer_set_text(text_layer_primary_address, venues[0].address);
 				layer_mark_dirty(text_layer_get_layer(text_layer_primary));

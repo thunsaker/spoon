@@ -34,10 +34,10 @@ Pebble.addEventListener('showConfiguration',
 	});
 
 Pebble.addEventListener('webviewclosed',
-	function(e) {
+	function(e) {	
 		var configuration = JSON.parse(e.response);
 		if(configuration.result) {
-			localStorage.foursquare_token = configuration.token;
+ 			localStorage.foursquare_token = configuration.token;
 			notifyPebbleConnected(localStorage.foursquare_token.toString());
 			isNewList = true;
 			getClosestVenues();

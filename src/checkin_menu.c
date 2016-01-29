@@ -111,7 +111,7 @@ static void window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
 	GRect bounds = layer_get_frame(window_layer);
 	
-	window_set_background_color(window, PBL_IF_ROUND_ELSE(GColorBlack, GColorWhite));
+	window_set_background_color(window, PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite));
 
 	#ifdef PBL_COLOR
 		#ifdef PBL_ROUND

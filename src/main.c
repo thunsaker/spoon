@@ -3,8 +3,8 @@
 #include <pebble.h>
 #include "libs/pebble-assist.h"
 #ifdef PBL_COLOR
-#include "libs/dithered_rects.h"
-#include "colors.h"
+	#include "libs/dithered_rects.h"
+	#include "colors.h"
 #endif
 #include "checkin_menu.h"
 #include "checkin.h"

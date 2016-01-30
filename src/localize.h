@@ -6,4 +6,3 @@
 void locale_init(void);
 
 char *locale_str(int hashval);
-

@@ -56,4 +56,3 @@ static FORCE_INLINE uint32_t hash_djb2(
 
   return hash;
 }
-

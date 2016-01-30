@@ -52,11 +52,6 @@
                 "type": "bitmap"
             },
             {
-                "file": "images/honey_spoon_white.png",
-                "name": "IMAGE_SPOON_WHITE",
-                "type": "png"
-            },
-            {
                 "type": "raw",
                 "name": "LOCALE_ENGLISH",
                 "file": "locale_english.bin"

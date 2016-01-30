@@ -108,7 +108,7 @@ void pulse_check_tick() {
 		#endif
 			
 		s_check_large_path = gpath_create(&CHECK_LARGE_PATH_POINTS);
-		text_layer_set_text(text_layer_status, checkinResult ? "Checked In!" : "Something went wrong :(");
+		text_layer_set_text(text_layer_status, checkinResult ? _("Checked In!") : _("Something went wrong :("));
 		
 		layer_mark_dirty(layer_check);
 		app_timer_cancel_safe(pulse_check_timer);
@@ -128,7 +128,7 @@ void checkin_timeout_tick() {
 		back_color = GColorDarkGray.argb;
 	#endif
 		
-	text_layer_set_text(text_layer_status, "Timeout :(");
+	text_layer_set_text(text_layer_status, _("Timeout :("));
 	layer_mark_dirty(layer_check);
 }
 
@@ -191,7 +191,7 @@ static void window_load(Window *window) {
 	text_layer_set_background_color(text_layer_status, GColorClear);
 	text_layer_set_text_alignment(text_layer_status, GTextAlignmentCenter);
 	text_layer_set_font(text_layer_status, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-	text_layer_set_text(text_layer_status, "Checking in...");
+	text_layer_set_text(text_layer_status, _("Checking in..."));
 	layer_add_child(window_layer, text_layer_get_layer(text_layer_status));
 
 	// Check

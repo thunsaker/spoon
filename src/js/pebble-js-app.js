@@ -23,7 +23,7 @@ Pebble.addEventListener('showConfiguration',
 	function(e) {
 		// TODO: Add the existing user settings to the url
 // 		Pebble.openURL('https://thunsaker.github.io/spoon/config'); // Prod
-		
+
 		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
  		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
 		if(client_id && callback_uri) {
@@ -34,7 +34,7 @@ Pebble.addEventListener('showConfiguration',
 	});
 
 Pebble.addEventListener('webviewclosed',
-	function(e) {	
+	function(e) {
 		var configuration = JSON.parse(e.response);
 		if(configuration.result) {
  			localStorage.foursquare_token = configuration.token;
@@ -44,7 +44,7 @@ Pebble.addEventListener('webviewclosed',
 		} else {
 			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
 		}
-		
+
 // 		if(configuration.theme !== null && configuration.unit !== null) {
 // 			localStorage.spoon_theme = configuration.theme;
 // 			localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
@@ -76,7 +76,7 @@ var error = function(e) {
 var success = function(position) {
 	var userToken = localStorage.foursquare_token !== null ?
 		localStorage.foursquare_token.toString() : null;
-	if(userToken) {	
+	if(userToken) {
 		fetchMostRecentCheckin(userToken);
 		fetchClosestVenues(userToken, position);
 	}
@@ -108,7 +108,7 @@ function fetchClosestVenues(token, position) {
 								venueDistance = distance >= ftInMile ? (distance/ftInMile).toFixed(2) + " mi - " : distance.toFixed(0) + " ft - ";
 							}
 							venueAddress = venueDistance + venueAddress;
-						}							
+						}
 
 						if(isNewList) {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'index':offsetIndex}});
@@ -158,12 +158,12 @@ function fetchMostRecentCheckin(token) {
 					var checkinItems = response.response.checkins.items;
 					checkinItems.forEach(function (element, index, array) {
 						var venueId = element.venue.id.replace('\'','');
-						var venueName = element.venue.name.length > 45 ? 
-							element.venue.name.substring(0,45).replace('\'','') 
+						var venueName = element.venue.name.length > 45 ?
+							element.venue.name.substring(0,45).replace('\'','')
 						: element.venue.name.replace('\'','');
 						var checkinDate = new Date(element.createdAt*1000);
-						var checkinString = checkinDate !== null ? 
-							"at " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString() 
+						var checkinString = checkinDate !== null ?
+							"at " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString()
 							: "Sometime in the past. :)";
 						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
 					});
@@ -193,7 +193,7 @@ function getClosestVenues() {
 	} else {
 		console.log('no location support');
 		error('not supported');
-	}		
+	}
 }
 
 function sendAppMessage() {
@@ -201,7 +201,7 @@ function sendAppMessage() {
 		return;
 	else
 		sending = true;
-	
+
 	if (appMessageQueue.length > 0) {
 		var currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
@@ -250,12 +250,12 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 						broadcastType += (broadcastType.length > 0 ? ',' : '') + 'facebook';
 					}
 				}
-					
+
 				if(broadcastType.length > 0) {
 					checkinRequestUrl += '&broadcast=' + broadcastType;
 				}
 // 				console.log("After broadcast checkinRequestUrl: " + checkinRequestUrl);
-				
+
 				req.open('POST', checkinRequestUrl, true);
 				req.onload = function(e) {
 					if (req.readyState == 4) {
@@ -291,7 +291,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 		} else {
 			console.log('no location support');
 			error('not supported');
-		}	
+		}
 	}
 }
 

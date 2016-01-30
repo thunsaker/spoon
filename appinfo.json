@@ -26,6 +26,26 @@
     "resources": {
         "media": [
             {
+                "file": "data/locale_spanish.bin",
+                "name": "LOCALE_SPANISH",
+                "type": "raw"
+            },
+            {
+                "file": "data/locale_german.bin",
+                "name": "LOCALE_GERMAN",
+                "type": "raw"
+            },
+            {
+                "file": "data/locale_french.bin",
+                "name": "LOCALE_FRENCH",
+                "type": "raw"
+            },
+            {
+                "file": "data/locale_english.bin",
+                "name": "LOCALE_ENGLISH",
+                "type": "raw"
+            },
+            {
                 "file": "images/spoon_2_menu_icon.png",
                 "menuIcon": true,
                 "name": "IMAGE_MENU",

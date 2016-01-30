@@ -8,28 +8,16 @@ var venues = {};
 var max_venues = 16;
 var max_radius = 5000;
 var isNewList = false;
-var api_date = '20160101';
+var api_date = '20150612';
 var api_mode = '&m=swarm';
 var sending = false;
 var mToFeet = 3.2808;
 var ftInMile = 5280;
-var lang = "en-US";
 
 Pebble.addEventListener('ready',
 	function(e) {
 		Pebble.sendAppMessage({'ready':true});
-		lang = navigator.language;
-		String.locale = "es";
-		console.log('Phone language is ' + lang);
 	});
-
-var appendLangToUrl = function(url) {
-	return url += "&locale=" + lang;
-};
-
-var errorString = function(error) {
-	return l("error") + error;
-};
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
@@ -39,9 +27,9 @@ Pebble.addEventListener('showConfiguration',
 		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
  		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
 		if(client_id && callback_uri) {
-			Pebble.openURL('https://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri + '&locale=' + lang);
+			Pebble.openURL('https://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri);
 		} else {
-			Pebble.showSimpleNotificationOnPebble('Spoon', l("invalid-auth"));
+			Pebble.showSimpleNotificationOnPebble('Spoon', 'Invalid authorization url, please check client_id and callback_uri variables.');
 		}
 	});
 
@@ -54,7 +42,7 @@ Pebble.addEventListener('webviewclosed',
 			isNewList = true;
 			getClosestVenues();
 		} else {
-			Pebble.showSimpleNotificationOnPebble('Spoon', errorString(l("error-connection")));
+			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
 		}
 
 // 		if(configuration.theme !== null && configuration.unit !== null) {
@@ -82,7 +70,7 @@ function notifyPebbleCheckinOutcome(result, message, tip) {
 }
 
 var error = function(e) {
-	Pebble.sendAppMessage({'error': errorString(e)});
+	Pebble.sendAppMessage({'error': e});
 };
 
 var success = function(position) {
@@ -98,8 +86,7 @@ function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 //  	console.log("requestUrl: " + requestUrl);
-	// TODO: Add language
-	req.open('GET', appendLangToUrl(requestUrl), true); // Might need to trip the culture code
+	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
 		if (req.readyState == 4) {
 			if (req.status == 200) {
@@ -110,27 +97,17 @@ function fetchClosestVenues(token, position) {
 					venues.forEach(function (element, index, array) {
 						var offsetIndex = index;
 						var venueId = element.id.replace('\'','');
-						var venueName = element.name.length >= 60 ? 
-							element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
-						var venueAddress = element.location.address ? 
-								element.location.address.length > 20 ? 
-								element.location.address.substring(0,20).trim() : 
-								element.location.address : 
-							l("address-none");
+						var venueName = element.name.length >= 60 ? element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
+						var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20).trim() : element.location.address : '(No Address)';
 						if(element.location.distance) {
 							var venueDistance = "";
 							if(localStorage.spoon_unit === null || localStorage.spoon_unit === "0") {
-								venueDistance = element.location.distance >= 1000 ? 
-									(element.location.distance/1000).toFixed(2) + " " + l("last-checkin-kilometers"): 
-									element.location.distance + " " + l("last-checkin-meters");
+								venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + " km - " : element.location.distance + " m - ";
 							} else {
 								var distance = element.location.distance * mToFeet;
-								venueDistance = distance >= ftInMile ?
-									(distance/ftInMile).toFixed(2) + " " + l("last-checkin-miles") : 
-									distance.toFixed(0) + " " + l("last-checkin");
-// 									distance.toFixed(0) + " " + l("last-checkin-feet");
+								venueDistance = distance >= ftInMile ? (distance/ftInMile).toFixed(2) + " mi - " : distance.toFixed(0) + " ft - ";
 							}
-							venueAddress = venueDistance + " " + venueAddress;
+							venueAddress = venueDistance + venueAddress;
 						}
 
 						if(isNewList) {
@@ -146,7 +123,7 @@ function fetchClosestVenues(token, position) {
 					});
 				} else {
 					//console.log('Invalid response received! ' + JSON.stringify(req));
-					appMessageQueue.push({'message': {'error': errorString(l("error-request"))}});
+					appMessageQueue.push({'message': {'error': 'Error: Error with request :('}});
 				}
 			} else {
 				console.log('Request returned error code ' + req.status.toString());
@@ -157,12 +134,12 @@ function fetchClosestVenues(token, position) {
 
 	req.ontimeout = function() {
 		console.log('HTTP request timed out');
-		appMessageQueue.push({'message': {'error': errorString(l("error-timeout"))}});
+		appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
 		sendAppMessage();
 	};
 	req.onerror = function() {
 		console.log('HTTP request return error');
-		appMessageQueue.push({'message': {'error': errorString(l("error-no-internet"))}});
+		appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
 		sendAppMessage();
 	};
 	req.send(null);
@@ -172,7 +149,7 @@ function fetchMostRecentCheckin(token) {
 	var reqRecent = new XMLHttpRequest();
 	var current_time = Math.round(new Date().getTime() / 1000);
 	var requestUrlRecent = 'https://api.foursquare.com/v2/users/self/checkins?oauth_token=' + token + '&v=' + api_date + '&m=foursquare&beforeTimestamp=' + current_time + '&sort=newestfirst&limit=1';
-	reqRecent.open('GET', appendLangToUrl(requestUrlRecent), true);
+	reqRecent.open('GET', requestUrlRecent, true);
 	reqRecent.onload = function(e) {
 		if (reqRecent.readyState == 4) {
 			if (reqRecent.status == 200) {
@@ -186,12 +163,12 @@ function fetchMostRecentCheckin(token) {
 						: element.venue.name.replace('\'','');
 						var checkinDate = new Date(element.createdAt*1000);
 						var checkinString = checkinDate !== null ?
-							l("last-checkin-at") + " " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString()
-							: l("last-checkin-no-date");
+							"at " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString()
+							: "Sometime in the past. :)";
 						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
 					});
 				} else {
-					appMessageQueue.push({'message': {'error': errorString(l("error-request"))}});
+					appMessageQueue.push({'message': {'error': 'Error: Error with request :(' }});
 				}
 			}
 		}
@@ -199,12 +176,12 @@ function fetchMostRecentCheckin(token) {
 	};
 	reqRecent.ontimeout = function() {
 		//console.log('HTTP request timed out');
-		appMessageQueue.push({'message': {'error': errorString(l("error-request"))}});
+		appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
 		sendAppMessage();
 	};
 	reqRecent.onerror = function() {
 		//console.log('HTTP request return error');
-		appMessageQueue.push({'message': {'error': errorString(l("error-no-internet"))}});
+		appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
 		sendAppMessage();
 	};
 	reqRecent.send(null);
@@ -292,7 +269,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 								}
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
-								notifyPebbleCheckinOutcome(false, errorString(l("error-request")), '');
+								notifyPebbleCheckinOutcome(false, 'Error:\nError with Request', '');
 							}
 						} else {
 							console.log('Request returned error code ' + req.status.toString());
@@ -301,13 +278,12 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 				};
 				req.ontimeout = function() {
 					console.log('HTTP request timed out');
-					errorString(l("error-request"))
-					appMessageQueue.push({'message': {'error': errorString(l("error-timeout"))}});
+					appMessageQueue.push({'message': {'error': 'Error:\nRequest timed out!'}});
 					sendAppMessage();
 				};
 				req.onerror = function() {
 					console.log('HTTP request return error');
-					appMessageQueue.push({'message': {'error': errorString(l("error-no-internet"))}});
+					appMessageQueue.push({'message': {'error': 'Error:\nNo internet connection detected.'}});
 					sendAppMessage();
 				};
 				req.send(null);
@@ -321,6 +297,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 
 Pebble.addEventListener('appmessage',
 	function(e) {
+//  		console.log('received appmessage');
 		if (e.payload.id) {
 // 			console.log('received appmessage id: ' + e.payload.id);
 			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);

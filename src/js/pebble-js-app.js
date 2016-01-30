@@ -14,22 +14,22 @@ var sending = false;
 var mToFeet = 3.2808;
 var ftInMile = 5280;
 var lang = "en-US";
-var newline = "\n";
 
 Pebble.addEventListener('ready',
 	function(e) {
 		Pebble.sendAppMessage({'ready':true});
 		lang = navigator.language;
+		String.locale = "es";
 		console.log('Phone language is ' + lang);
 	});
 
-var appendLangToUrl = function(string) {
-	return string += "&locale=" + lang;
+var appendLangToUrl = function(url) {
+	return url += "&locale=" + lang;
 };
 
-var errorString = function(string) {
-	return string.format(_("error"), string);
-}
+var errorString = function(error) {
+	return l("error") + error;
+};
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
@@ -41,7 +41,7 @@ Pebble.addEventListener('showConfiguration',
 		if(client_id && callback_uri) {
 			Pebble.openURL('https://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri + '&locale=' + lang);
 		} else {
-			Pebble.showSimpleNotificationOnPebble('Spoon', _('invalid-auth'));
+			Pebble.showSimpleNotificationOnPebble('Spoon', l("invalid-auth"));
 		}
 	});
 
@@ -54,7 +54,7 @@ Pebble.addEventListener('webviewclosed',
 			isNewList = true;
 			getClosestVenues();
 		} else {
-			Pebble.showSimpleNotificationOnPebble('Spoon', errorString(_('error-connection')));
+			Pebble.showSimpleNotificationOnPebble('Spoon', errorString(l("error-connection")));
 		}
 
 // 		if(configuration.theme !== null && configuration.unit !== null) {
@@ -110,17 +110,27 @@ function fetchClosestVenues(token, position) {
 					venues.forEach(function (element, index, array) {
 						var offsetIndex = index;
 						var venueId = element.id.replace('\'','');
-						var venueName = element.name.length >= 60 ? element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
-						var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20).trim() : element.location.address : '(No Address)';
+						var venueName = element.name.length >= 60 ? 
+							element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
+						var venueAddress = element.location.address ? 
+								element.location.address.length > 20 ? 
+								element.location.address.substring(0,20).trim() : 
+								element.location.address : 
+							l("address-none");
 						if(element.location.distance) {
 							var venueDistance = "";
 							if(localStorage.spoon_unit === null || localStorage.spoon_unit === "0") {
-								venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + _("last-checkin-kilometers") : element.location.distance + " m - ";
+								venueDistance = element.location.distance >= 1000 ? 
+									(element.location.distance/1000).toFixed(2) + " " + l("last-checkin-kilometers"): 
+									element.location.distance + " " + l("last-checkin-meters");
 							} else {
 								var distance = element.location.distance * mToFeet;
-								venueDistance = distance >= ftInMile ? (distance/ftInMile).toFixed(2) + _("last-checkin-miles") : distance.toFixed(0) + _("last-checkin-feet");
+								venueDistance = distance >= ftInMile ?
+									(distance/ftInMile).toFixed(2) + " " + l("last-checkin-miles") : 
+									distance.toFixed(0) + " " + l("last-checkin");
+// 									distance.toFixed(0) + " " + l("last-checkin-feet");
 							}
-							venueAddress = venueDistance + venueAddress;
+							venueAddress = venueDistance + " " + venueAddress;
 						}
 
 						if(isNewList) {
@@ -136,7 +146,7 @@ function fetchClosestVenues(token, position) {
 					});
 				} else {
 					//console.log('Invalid response received! ' + JSON.stringify(req));
-					appMessageQueue.push({'message': {'error': errorString_('error-request'))}});
+					appMessageQueue.push({'message': {'error': errorString(l("error-request"))}});
 				}
 			} else {
 				console.log('Request returned error code ' + req.status.toString());
@@ -147,12 +157,12 @@ function fetchClosestVenues(token, position) {
 
 	req.ontimeout = function() {
 		console.log('HTTP request timed out');
-		appMessageQueue.push({'message': {'error': errorString(_("error-timeout"))}});
+		appMessageQueue.push({'message': {'error': errorString(l("error-timeout"))}});
 		sendAppMessage();
 	};
 	req.onerror = function() {
 		console.log('HTTP request return error');
-		appMessageQueue.push({'message': {'error': errorString(_("error-no-internet"))}});
+		appMessageQueue.push({'message': {'error': errorString(l("error-no-internet"))}});
 		sendAppMessage();
 	};
 	req.send(null);
@@ -176,12 +186,12 @@ function fetchMostRecentCheckin(token) {
 						: element.venue.name.replace('\'','');
 						var checkinDate = new Date(element.createdAt*1000);
 						var checkinString = checkinDate !== null ?
-							_("last-checkin-at") + " " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString()
-							: _("last-checkin-no-date");
+							l("last-checkin-at") + " " + checkinDate.getHours() + ":" + checkinDate.getMinutes() + " " + checkinDate.toDateString()
+							: l("last-checkin-no-date");
 						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
 					});
 				} else {
-					appMessageQueue.push({'message': {'error': errorString(_("error-request")) }});
+					appMessageQueue.push({'message': {'error': errorString(l("error-request"))}});
 				}
 			}
 		}
@@ -189,12 +199,12 @@ function fetchMostRecentCheckin(token) {
 	};
 	reqRecent.ontimeout = function() {
 		//console.log('HTTP request timed out');
-		appMessageQueue.push({'message': {'error': errorString(_("error-request"))}});
+		appMessageQueue.push({'message': {'error': errorString(l("error-request"))}});
 		sendAppMessage();
 	};
 	reqRecent.onerror = function() {
 		//console.log('HTTP request return error');
-		appMessageQueue.push({'message': {'error': errorString(_("error-no-internet"))}});
+		appMessageQueue.push({'message': {'error': errorString(l("error-no-internet"))}});
 		sendAppMessage();
 	};
 	reqRecent.send(null);
@@ -282,7 +292,7 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 								}
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));
-								notifyPebbleCheckinOutcome(false, errorString(_("error-request")), '');
+								notifyPebbleCheckinOutcome(false, errorString(l("error-request")), '');
 							}
 						} else {
 							console.log('Request returned error code ' + req.status.toString());
@@ -291,13 +301,13 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 				};
 				req.ontimeout = function() {
 					console.log('HTTP request timed out');
-					errorString(_("error-request"))
-					appMessageQueue.push({'message': {'error': errorString(_("error-timeout"))}});
+					errorString(l("error-request"))
+					appMessageQueue.push({'message': {'error': errorString(l("error-timeout"))}});
 					sendAppMessage();
 				};
 				req.onerror = function() {
 					console.log('HTTP request return error');
-					appMessageQueue.push({'message': {'error': errorString(_("error-no-internet"))}});
+					appMessageQueue.push({'message': {'error': errorString(l("error-no-internet"))}});
 					sendAppMessage();
 				};
 				req.send(null);

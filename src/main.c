@@ -107,6 +107,26 @@ static PropertyAnimation *s_transition_text_2_animation;
 static PropertyAnimation *s_transition_circle_animation;
 static PropertyAnimation *s_transition_menu_animation;
 
+static char *getErrorReason(int error_code) {
+	switch(error_code) {
+		case 0:
+			return _("No internet connection detected.");
+		break;
+		case 1:
+			return _("Request timed out!");
+		break;
+		case 2:
+			return _("Error with request :(");
+		break;
+		case 3:
+			return _("Connection Failed. Try Again.");
+		break;
+		default:
+			return _("Something went wrong :(");
+		break;
+	};
+}
+
 static void getListOfLocations() {
 	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
@@ -906,6 +926,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
 	Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
 	Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
+	Tuple *text_tuple_distance = dict_find(iter, SPOON_DISTANCE);
 	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
 	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
 	Tuple *text_tuple_config = dict_find(iter, SPOON_CONFIG);
@@ -913,7 +934,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 // 	APP_LOG(APP_LOG_LEVEL_DEBUG, "In received");
 
 	if(text_tuple_error) {
-		text_layer_set_text(text_layer_primary, text_tuple_error->value->cstring);
+		text_layer_set_text(text_layer_primary, getErrorReason(text_tuple_error->value->int16));
 	} else if(text_tuple_config) {
 		#ifdef PBL_COLOR
 			int config = text_tuple_config->value->int16;
@@ -944,10 +965,14 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			strncpy(venue.id, text_tuple_id->value->cstring, sizeof(venue.id));
 			strncpy(venue.name, text_tuple_name->value->cstring, sizeof(venue.name));
 
-			if(text_tuple_address) {
+			if(text_tuple_address && strlen(text_tuple_address->value->cstring) > 0) {
 				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
 			} else {
-				strncpy(venue.address, "-", sizeof(venue.address));
+				strncpy(venue.address, _("(No Address)"), sizeof(venue.address));
+			}
+			
+			if(text_tuple_distance) {
+				venue.distance = text_tuple_distance->value->int16;
 			}
 
 			if(index == -1) {
@@ -987,8 +1012,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 }
 
 void in_dropped_handler(AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message.");
-   	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message: %i - %s", reason, translate_error(reason));
 }
 
 static void init(void) {

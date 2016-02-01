@@ -9,6 +9,7 @@ typedef struct {
         char id[25];
         char name[128];
         char address[128];
+		int distance;
 		int index;
 		bool isRecent;
 } SpoonVenue;
@@ -28,7 +29,8 @@ enum {
 	SPOON_ERROR = 0xB,
 	SPOON_CONFIG = 0xC,
 	SPOON_RECENT = 0xD,
-	SPOON_READY = 0xE
+	SPOON_READY = 0xE,
+	SPOON_DISTANCE = 0xF
 };
 
 #define KEY_TOKEN 10

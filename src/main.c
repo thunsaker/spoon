@@ -968,7 +968,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			if(text_tuple_address && strlen(text_tuple_address->value->cstring) > 0) {
 				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
 			} else {
-				strncpy(venue.address, _("(No Address)"), sizeof(venue.address));
+				strncpy(venue.address, _("No Address"), sizeof(venue.address));
 			}
 			
 			if(text_tuple_distance) {

@@ -53,6 +53,7 @@ static Layer *layer_back;
 static Layer *layer_primary_back;
 static TextLayer *text_layer_primary;
 static TextLayer *text_layer_primary_address;
+static TextLayer *text_layer_primary_distance;
 static Layer *layer_primary_circle;
 static MenuLayer *layer_menu_venues;
 static TextLayer *text_layer_last_checkin_title;
@@ -107,7 +108,7 @@ static PropertyAnimation *s_transition_text_2_animation;
 static PropertyAnimation *s_transition_circle_animation;
 static PropertyAnimation *s_transition_menu_animation;
 
-static char *getErrorReason(int error_code) {
+char *getErrorReason(int error_code) {
 	switch(error_code) {
 		case 0:
 			return _("No internet connection detected.");
@@ -125,6 +126,19 @@ static char *getErrorReason(int error_code) {
 			return _("Something went wrong :(");
 		break;
 	};
+}
+
+char *get_unit(int unit) {
+	switch(unit) {
+		case 1:
+			return "km";
+		case 2:
+			return "ft";
+		case 3:
+			return "mi";
+		default:
+			return "m";
+	}
 }
 
 static void getListOfLocations() {
@@ -650,7 +664,10 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 			#endif
 			graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
-		} else {
+		} else if (strlen(venues[cell_index->row].name) > 0) {
+			static char addressString[30];
+			snprintf(addressString, sizeof(addressString), 
+					 "%s %s - %s", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit), venues[cell_index->row].address);
 			#ifdef PBL_ROUND
 				GSize text_size = graphics_text_layout_get_content_size(
 					venues[cell_index->row].name,
@@ -663,7 +680,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentCenter,
 								   NULL);
-				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+				graphics_draw_text(ctx, addressString, little_font,
 								   GRect(10, bounds.size.h-24, bounds.size.w - 20, 20),
 								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentCenter,
@@ -674,7 +691,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentLeft,
 								   NULL);
-				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+				graphics_draw_text(ctx, addressString, little_font,
 								   GRect(5, 30, bounds.size.w - 10, 20),
 								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentLeft,
@@ -763,7 +780,7 @@ static void window_load(Window *window) {
 	#ifdef PBL_ROUND
 		text_layer_last_checkin_venue = text_layer_create(GRect(0,(bounds.size.h/2)-40,SCREEN_WIDTH,74));
 	#else
-	 	text_layer_last_checkin_venue = text_layer_create(GRect(10,74,bounds.size.w-10,74));
+	 	text_layer_last_checkin_venue = text_layer_create(GRect(10,40,bounds.size.w-10,74));
 	#endif
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
@@ -839,7 +856,7 @@ static void window_load(Window *window) {
 
 	// Text 2
 	#ifdef PBL_ROUND
-		text_layer_primary_address = text_layer_create(GRect(30,50,bounds.size.w-60,60));
+		text_layer_primary_address = text_layer_create(GRect(30,50,bounds.size.w-60,20));
 		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_address, 10);
 	#else
 		text_layer_primary_address = text_layer_create(GRect(10,60,bounds.size.w-10,20));
@@ -850,6 +867,16 @@ static void window_load(Window *window) {
 	text_layer_set_font(text_layer_primary_address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	text_layer_set_text(text_layer_primary_address, "");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
+	
+	#ifdef PBL_ROUND
+		text_layer_primary_distance = text_layer_create(GRect(0,65,bounds.size.w,20));
+		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_distance, 5);
+		text_layer_set_background_color(text_layer_primary_distance, GColorClear);
+		text_layer_set_text_alignment(text_layer_primary_distance, GTextAlignmentCenter);
+		text_layer_set_font(text_layer_primary_distance, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+		text_layer_set_text(text_layer_primary_distance, "");
+		layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_distance));
+	#endif
 
 	// FAB
 	layer_primary_circle = layer_create(GRect(0,PBL_IF_ROUND_ELSE(0,0 - STATUS_BAR_OFFSET),bounds.size.w,bounds.size.h));
@@ -927,6 +954,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
 	Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
 	Tuple *text_tuple_distance = dict_find(iter, SPOON_DISTANCE);
+	Tuple *text_tuple_distance_unit = dict_find(iter, SPOON_UNIT);
 	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
 	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
 	Tuple *text_tuple_config = dict_find(iter, SPOON_CONFIG);
@@ -963,16 +991,17 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			SpoonVenue venue;
 			venue.index = index;
 			strncpy(venue.id, text_tuple_id->value->cstring, sizeof(venue.id));
-			strncpy(venue.name, text_tuple_name->value->cstring, sizeof(venue.name));
+			strcpy(venue.name, text_tuple_name->value->cstring);
 
 			if(text_tuple_address && strlen(text_tuple_address->value->cstring) > 0) {
-				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
+				strcpy(venue.address, text_tuple_address->value->cstring);
 			} else {
-				strncpy(venue.address, _("No Address"), sizeof(venue.address));
+				strcpy(venue.address, _("No Address"));
 			}
 			
-			if(text_tuple_distance) {
-				venue.distance = text_tuple_distance->value->int16;
+			if(text_tuple_distance && text_tuple_distance_unit) {
+				strcpy(venue.distance, text_tuple_distance->value->cstring);
+				venue.distance_unit = text_tuple_distance_unit->value->int16;
 			}
 
 			if(index == -1) {
@@ -991,7 +1020,17 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(SCREEN_WIDTH-40,50));
 				text_layer_set_text(text_layer_primary, venues[0].name);
-				text_layer_set_text(text_layer_primary_address, venues[0].address);
+				static char addressString[30];
+				#ifdef PBL_ROUND
+					text_layer_set_text(text_layer_primary_address, venues[0].address);
+					snprintf(addressString, sizeof(addressString), 
+							 "%s %s", venues[0].distance, get_unit(venues[0].distance_unit));
+					text_layer_set_text(text_layer_primary_distance, addressString);
+				#else
+					snprintf(addressString, sizeof(addressString), 
+							 "%s %s - %s", venues[0].distance, get_unit(venues[0].distance_unit), venues[0].address);
+					text_layer_set_text(text_layer_primary_address, addressString);
+				#endif
 				layer_mark_dirty(text_layer_get_layer(text_layer_primary));
 				layer_mark_dirty(layer_primary_back);
 			}
@@ -1040,6 +1079,7 @@ static void deinit(void) {
 	text_layer_destroy_safe(text_layer_last_checkin_title);
 	text_layer_destroy_safe(text_layer_last_checkin_venue);
 	text_layer_destroy_safe(text_layer_last_checkin_address);
+	text_layer_destroy_safe(text_layer_primary_distance);
 	text_layer_destroy_safe(text_layer_last_checkin_date);
 
 	layer_destroy_safe(layer_last_checkin);

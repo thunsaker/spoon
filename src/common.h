@@ -3,11 +3,14 @@
 #pragma once
 	
 #include <pebble.h>
+#include <localize.h>
 
 typedef struct {
         char id[25];
         char name[128];
         char address[128];
+		char distance[10];
+		int distance_unit;
 		int index;
 		bool isRecent;
 } SpoonVenue;
@@ -27,7 +30,9 @@ enum {
 	SPOON_ERROR = 0xB,
 	SPOON_CONFIG = 0xC,
 	SPOON_RECENT = 0xD,
-	SPOON_READY = 0xE
+	SPOON_READY = 0xE,
+	SPOON_DISTANCE = 0xF,
+	SPOON_UNIT = 0x10
 };
 
 #define KEY_TOKEN 10
@@ -38,7 +43,3 @@ enum {
 #else
 	#define STATUS_BAR_OFFSET 12
 #endif
-	
-#define DIALOG_MESSAGE_NOT_CONNECTED  "Connect to Foursquare on Phone"
-#define DIALOG_MESSAGE_NO_PHONE "Error:\n No connection to phone"
-#define DIALOG_MESSAGE_NO_LOCATION  "No Location"

@@ -12,13 +12,14 @@
 #include "common.h"
 #include "config.h"
 #include "paths.h"
+#include <localize.h>
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
 
 #define ANIM_DURATION 100
 #define ANIM_DELAY 300
-	
+
 #define NUM_MENU_SECTIONS 1
 #ifdef PBL_PLATFORM_APLITE
 	#define NUM_MENU_ITEMS 12
@@ -52,6 +53,7 @@ static Layer *layer_back;
 static Layer *layer_primary_back;
 static TextLayer *text_layer_primary;
 static TextLayer *text_layer_primary_address;
+static TextLayer *text_layer_primary_distance;
 static Layer *layer_primary_circle;
 static MenuLayer *layer_menu_venues;
 static TextLayer *text_layer_last_checkin_title;
@@ -106,6 +108,39 @@ static PropertyAnimation *s_transition_text_2_animation;
 static PropertyAnimation *s_transition_circle_animation;
 static PropertyAnimation *s_transition_menu_animation;
 
+char *getErrorReason(int error_code) {
+	switch(error_code) {
+		case 0:
+			return _("No internet connection detected.");
+		break;
+		case 1:
+			return _("Request timed out!");
+		break;
+		case 2:
+			return _("Error with request :(");
+		break;
+		case 3:
+			return _("Connection Failed. Try Again.");
+		break;
+		default:
+			return _("Something went wrong :(");
+		break;
+	};
+}
+
+char *get_unit(int unit) {
+	switch(unit) {
+		case 1:
+			return "km";
+		case 2:
+			return "ft";
+		case 3:
+			return "mi";
+		default:
+			return "m";
+	}
+}
+
 static void getListOfLocations() {
 	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
@@ -114,8 +149,9 @@ static void getListOfLocations() {
 	if (iter == NULL) {
 		return;
 	}
-	text_layer_set_text(text_layer_primary, "Refreshing...");
+	text_layer_set_text(text_layer_primary, _("Refreshing..."));
 	text_layer_set_text(text_layer_primary_address, "");
+
 	dict_write_tuplet(iter, &refresh_tuple);
 	dict_write_end(iter);
 	app_message_outbox_send();
@@ -125,7 +161,7 @@ static void transition_circle_anim_stopped_handler(Animation *animation, bool fi
 	#ifdef PBL_SDK_2
 		property_animation_destroy((PropertyAnimation*)s_transition_circle_animation);
 	#endif
-		
+
 	layer_mark_dirty(layer_primary_circle);
 	if(!last_mode) {
 		reverse_menu_animation = false;
@@ -169,7 +205,7 @@ static void last_checkin_show() {
 	}
 
 	// Drop Current Venue
-	s_drop_current_animation = reverse_last_animation 
+	s_drop_current_animation = reverse_last_animation
 		? property_animation_create_layer_frame(layer_primary_back, &box_finish, &box_start)
 		: property_animation_create_layer_frame(layer_primary_back, &box_start, &box_finish);
 	if(animation_is_scheduled((Animation*)s_drop_current_animation)) {
@@ -204,7 +240,7 @@ static void last_checkin_show() {
 	s_transition_circle_animation = reverse_last_animation
 		? property_animation_create_layer_frame(layer_primary_circle, &fab_finish, &fab_start)
 		: property_animation_create_layer_frame(layer_primary_circle, &fab_start, &fab_finish);
-	Animation *anim_slide_circle = 
+	Animation *anim_slide_circle =
 		property_animation_get_animation(s_transition_circle_animation);
 	animation_set_duration(anim_slide_circle, 500);
 	animation_set_handlers((Animation*)s_transition_circle_animation, (AnimationHandlers) {
@@ -220,14 +256,14 @@ static void transition_animation() {
 	GRect start = GRect(0, (SCREEN_HEIGHT/2) - STATUS_BAR_OFFSET, SCREEN_WIDTH, (SCREEN_HEIGHT/2) + STATUS_BAR_OFFSET);
 	GRect finish = GRect(0, -10 - ROW_HEIGHT, SCREEN_WIDTH, ROW_HEIGHT + 10);
 	if(reverse_menu_animation) {
-		s_transition_box_animation = 
+		s_transition_box_animation =
 			property_animation_create_layer_frame(layer_primary_back, &finish, &start);
 	} else {
-		s_transition_box_animation = 
+		s_transition_box_animation =
 			property_animation_create_layer_frame(layer_primary_back, &start, &finish);
 	}
-	
-	anim_slide_box = 
+
+	anim_slide_box =
 		property_animation_get_animation(s_transition_box_animation);
 	animation_set_duration(anim_slide_box, 500);
 	layer_mark_dirty(layer_primary_back);
@@ -261,16 +297,16 @@ static void transition_animation() {
 	#endif
 	if(reverse_menu_animation) {
 		text_layer_set_text_color(text_layer_primary, GColorBlack);
-		s_transition_text_1_animation = 
+		s_transition_text_1_animation =
 			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary), &finish, &start);
 	} else {
 		#ifdef PBL_COLOR
 			text_layer_set_text_color(text_layer_primary, GColorDarkGray);
 		#endif
-		s_transition_text_1_animation = 
+		s_transition_text_1_animation =
 			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary), &start, &finish);
 	}
-	anim_slide_text_1 = 
+	anim_slide_text_1 =
 		property_animation_get_animation(s_transition_text_1_animation);
 	animation_set_duration(anim_slide_text_1, 100);
 	animation_set_handlers(anim_slide_text_1, (AnimationHandlers) {
@@ -289,22 +325,22 @@ static void transition_animation() {
 	#endif
 	if(reverse_menu_animation) {
 		text_layer_set_text_color(text_layer_primary_address, GColorBlack);
-		s_transition_text_2_animation = 
+		s_transition_text_2_animation =
 			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary_address), &finish, &start);
 	} else {
 		#ifdef PBL_COLOR
 			text_layer_set_text_color(text_layer_primary_address, GColorDarkGray);
 		#endif
-		s_transition_text_2_animation = 
+		s_transition_text_2_animation =
 			property_animation_create_layer_frame(text_layer_get_layer(text_layer_primary_address), &start, &finish);
 	}
-	anim_slide_text_2 = 
+	anim_slide_text_2 =
 		property_animation_get_animation(s_transition_text_2_animation);
 	animation_set_handlers(anim_slide_text_2, (AnimationHandlers) {
 		.stopped = anim_stopped_handler
 	}, NULL);
 	animation_set_duration(anim_slide_text_2, 100);
-	
+
 	// TODO: Fix this line, it is crashing
 // 	text_layer_set_size(text_layer_primary_address,GSize(102,20));
 
@@ -317,16 +353,16 @@ static void transition_animation() {
 	#endif
 
 	if(reverse_menu_animation) {
-		s_transition_menu_animation = 
+		s_transition_menu_animation =
 			property_animation_create_layer_frame(menu_layer_get_layer(layer_menu_venues), &finish, &start);
 		menu_mode = false;
 	} else {
-		s_transition_menu_animation = 
+		s_transition_menu_animation =
 			property_animation_create_layer_frame(menu_layer_get_layer(layer_menu_venues), &start, &finish);
 		menu_mode = true;
 	}
-	
-	anim_slide_menu = 
+
+	anim_slide_menu =
 		property_animation_get_animation(s_transition_menu_animation);
 	animation_set_duration(anim_slide_menu, 100);
 	animation_set_handlers((Animation*)s_transition_menu_animation, (AnimationHandlers) {
@@ -335,7 +371,7 @@ static void transition_animation() {
 	animation_set_handlers(anim_slide_menu, (AnimationHandlers) {
 		.stopped = anim_stopped_handler
 	}, NULL);
-	
+
 	#ifdef PBL_SDK_3
  		Animation *spawn = animation_spawn_create(anim_slide_box, anim_slide_circle, anim_slide_text_1, anim_slide_text_2, anim_slide_menu, NULL);
 		animation_schedule(spawn);
@@ -366,10 +402,10 @@ void circle_grow_timer_tick() {
 	} else {
 		grow_circle = false;
 		show_checkin = false;
-		
+
 		circle_radius = DEFAULT_CIRCLE_RADIUS;
 		circle_radius_count = 1;
-		
+
 		app_timer_cancel_safe(circle_grow_timer);
 		checkin_show();
 	}
@@ -391,7 +427,7 @@ static void up_single_click_handler(ClickRecognizerRef recognizer, void *context
 			up_count++;
 			if(up_count == 2) {
 				getListOfLocations();
-				
+
 				// Return to venue list
 				reverse_last_animation = true;
 				last_checkin_show();
@@ -464,7 +500,7 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
 			strncpy(venuename, venues[0].name, sizeof(venuename));
 			show_checkin = true;
 			grow_circle = true;
-			
+
 			// Start timer to grow circle
 			circle_grow_timer = app_timer_register(100, circle_grow_timer_tick, NULL);
 			checkin_send_request(venueid, venuename, 0, 0, 0, false);
@@ -509,7 +545,7 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 			#else
 				graphics_context_set_fill_color(ctx, GColorBlack);
 			#endif
-			
+
 			graphics_fill_circle(ctx, GPoint(113,81), circle_radius);
 		}
 	} else if(drop_and_shrink) {
@@ -540,14 +576,14 @@ void draw_layer_primary_circle(Layer *cell_layer, GContext *ctx) {
 		#else
 			graphics_context_set_fill_color(ctx, GColorBlack);
 		#endif
-		
+
 		// Circle
 		#ifdef PBL_ROUND
 			graphics_fill_circle(ctx, GPoint(220,SCREEN_HEIGHT/2), DEFAULT_CIRCLE_RADIUS_ROUND);
 		#else
 			graphics_fill_circle(ctx, GPoint(113,81), DEFAULT_CIRCLE_RADIUS);
 		#endif
-		
+
 		// Icon
 		if(is_refreshing) {
 			GRect bitmap_bounds = gbitmap_get_bounds(image_refresh);
@@ -597,7 +633,7 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
 	#ifdef PBL_PLATFORM_APLITE
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
-			menu_cell_basic_draw(ctx, cell_layer, "Foursquare", "Powered", image_cog);
+			menu_cell_basic_draw(ctx, cell_layer, _("Foursquare"), _("Powered"), image_cog);
 		} else {
 			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
 		}
@@ -608,16 +644,16 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
 			#ifdef PBL_ROUND
-				graphics_draw_text(ctx, "Powered by Foursquare", little_font,
+				graphics_draw_text(ctx, _("Powered by Foursquare"), little_font,
 								   GRect(10, (bounds.size.h/2) - 15, bounds.size.w - 20, 25),
-								   GTextOverflowModeTrailingEllipsis, 
+								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentCenter,
-								   NULL);			
+								   NULL);
 				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
 										 (bounds.size.h/2) + 5,
 										 bitmap_bounds.size.w, bitmap_bounds.size.h);
 			#else
-				graphics_draw_text(ctx, "Powered by Foursquare", little_font,
+				graphics_draw_text(ctx, _("Powered by Foursquare"), little_font,
 								   GRect(5, 4, bounds.size.w - 10, 20),
 								   GTextOverflowModeFill,
 								   GTextAlignmentCenter,
@@ -628,33 +664,36 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 			#endif
 			graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
-		} else {
+		} else if (strlen(venues[cell_index->row].name) > 0) {
+			static char addressString[30];
+			snprintf(addressString, sizeof(addressString), 
+					 "%s %s - %s", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit), venues[cell_index->row].address);
 			#ifdef PBL_ROUND
 				GSize text_size = graphics_text_layout_get_content_size(
 					venues[cell_index->row].name,
 					big_font,
 					GRect(0, 5, bounds.size.w - 20, 50),
-					GTextOverflowModeTrailingEllipsis, 
+					GTextOverflowModeTrailingEllipsis,
 					GTextAlignmentCenter);
 				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
 								   GRect(10, text_size.h > 25 ? 7 : 20, bounds.size.w - 20, 50),
-								   GTextOverflowModeTrailingEllipsis, 
+								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentCenter,
 								   NULL);
-				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+				graphics_draw_text(ctx, addressString, little_font,
 								   GRect(10, bounds.size.h-24, bounds.size.w - 20, 20),
-								   GTextOverflowModeTrailingEllipsis, 
+								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentCenter,
 								   NULL);
 			#else
 				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
 								   GRect(5, 4, bounds.size.w - 10, 25),
-								   GTextOverflowModeTrailingEllipsis, 
+								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentLeft,
 								   NULL);
-				graphics_draw_text(ctx, venues[cell_index->row].address, little_font,
+				graphics_draw_text(ctx, addressString, little_font,
 								   GRect(5, 30, bounds.size.w - 10, 20),
-								   GTextOverflowModeTrailingEllipsis, 
+								   GTextOverflowModeTrailingEllipsis,
 								   GTextAlignmentLeft,
 								   NULL);
 			#endif
@@ -694,11 +733,11 @@ static void window_load(Window *window) {
 	GRect bounds = layer_get_frame(window_layer);
 	SCREEN_HEIGHT = bounds.size.h;
 	SCREEN_WIDTH = bounds.size.w;
-	
+
 	#ifdef PBL_COLOR
 		setup_theme_colors(config_get_theme());
 	#endif
-	
+
 	// Background
   	#ifdef PBL_COLOR
 		accent_color = get_accent_color();
@@ -710,17 +749,17 @@ static void window_load(Window *window) {
 	#else
 		window_set_background_color(window, GColorWhite);
   	#endif
-	
+
 	// Main Background
 	layer_back = layer_create(GRect(0,0,bounds.size.w,bounds.size.h));
 	layer_set_update_proc(layer_back, draw_image_layer_back);
 	layer_add_child(window_layer, layer_back);
-	
+
 	#ifdef PBL_COLOR
 		// TODO: Show image from the first venue, maybe
 		start_transitioning_rect(layer_back, 100, 1);
 	#endif
-	
+
 	// Last Checkin
 	layer_last_checkin = layer_create(GRect(0,0-bounds.size.h, bounds.size.w, bounds.size.h));
 
@@ -734,20 +773,20 @@ static void window_load(Window *window) {
 	text_layer_set_background_color(text_layer_last_checkin_title, GColorClear);
 	text_layer_set_text_alignment(text_layer_last_checkin_title, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_last_checkin_title, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-	text_layer_set_text(text_layer_last_checkin_title, "Last Check-In");
+	text_layer_set_text(text_layer_last_checkin_title, _("Last Check-In"));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_title));
 
 	// Venue
 	#ifdef PBL_ROUND
 		text_layer_last_checkin_venue = text_layer_create(GRect(0,(bounds.size.h/2)-40,SCREEN_WIDTH,74));
 	#else
-	 	text_layer_last_checkin_venue = text_layer_create(GRect(10,74,bounds.size.w-10,74));
+	 	text_layer_last_checkin_venue = text_layer_create(GRect(10,40,bounds.size.w-10,74));
 	#endif
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
 	text_layer_set_text_alignment(text_layer_last_checkin_venue, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-	text_layer_set_text(text_layer_last_checkin_venue, "Venue Name");
+	text_layer_set_text(text_layer_last_checkin_venue, _("Venue Name"));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
 
 	// Date
@@ -761,14 +800,14 @@ static void window_load(Window *window) {
 	text_layer_set_text_alignment(text_layer_last_checkin_date, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_last_checkin_date, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 
-	text_layer_set_text(text_layer_last_checkin_date, "at sometime...");
+	text_layer_set_text(text_layer_last_checkin_date, _("at sometime..."));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_date));
 
 	// TODO: Not sure about address placement here...
 	//layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_address));
 
 	layer_add_child(window_layer, layer_last_checkin);
-	
+
 	// Menu
 	layer_menu_venues = menu_layer_create(
 		GRect(bounds.origin.x, bounds.origin.y+bounds.size.h, bounds.size.w, bounds.size.h));
@@ -781,9 +820,9 @@ static void window_load(Window *window) {
 		.draw_row = menu_draw_row_callback
 	});
 	menu_mode = false;
-	
+
 	image_cog = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_COG);
-	
+
 	#ifdef PBL_SDK_3
 		#ifdef PBL_COLOR
 			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
@@ -799,7 +838,7 @@ static void window_load(Window *window) {
 	layer_primary_back = layer_create(GRect(0,(bounds.size.h/2) - STATUS_BAR_OFFSET,bounds.size.w, (bounds.size.h/2) + STATUS_BAR_OFFSET));
 	layer_set_update_proc(layer_primary_back, draw_layer_primary_back);
 	layer_add_child(window_layer, layer_primary_back);
-	
+
 	// Text 1
 	#ifdef PBL_ROUND
 		text_layer_primary = text_layer_create(GRect(15,5,bounds.size.w-25,74));
@@ -812,12 +851,12 @@ static void window_load(Window *window) {
 	text_layer_set_text_alignment(text_layer_primary, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
 	text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
 	text_layer_set_overflow_mode(text_layer_primary, GTextOverflowModeTrailingEllipsis);
-	text_layer_set_text(text_layer_primary, "Loading...");
+	text_layer_set_text(text_layer_primary, _("Loading..."));
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
 
 	// Text 2
 	#ifdef PBL_ROUND
-		text_layer_primary_address = text_layer_create(GRect(30,50,bounds.size.w-60,60));
+		text_layer_primary_address = text_layer_create(GRect(30,50,bounds.size.w-60,20));
 		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_address, 10);
 	#else
 		text_layer_primary_address = text_layer_create(GRect(10,60,bounds.size.w-10,20));
@@ -829,13 +868,23 @@ static void window_load(Window *window) {
 	text_layer_set_text(text_layer_primary_address, "");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
 	
-	// FAB	
+	#ifdef PBL_ROUND
+		text_layer_primary_distance = text_layer_create(GRect(0,65,bounds.size.w,20));
+		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_distance, 5);
+		text_layer_set_background_color(text_layer_primary_distance, GColorClear);
+		text_layer_set_text_alignment(text_layer_primary_distance, GTextAlignmentCenter);
+		text_layer_set_font(text_layer_primary_distance, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+		text_layer_set_text(text_layer_primary_distance, "");
+		layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_distance));
+	#endif
+
+	// FAB
 	layer_primary_circle = layer_create(GRect(0,PBL_IF_ROUND_ELSE(0,0 - STATUS_BAR_OFFSET),bounds.size.w,bounds.size.h));
  	layer_set_update_proc(layer_primary_circle, draw_layer_primary_circle);
 	layer_add_child(window_layer, layer_primary_circle);
-	
+
 	image_refresh = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_REFRESH);
-	
+
 	// Status Bar
 	#ifdef PBL_SDK_3
 		s_status_bar = status_bar_layer_create();
@@ -848,21 +897,21 @@ static void window_load(Window *window) {
 		layer_add_child(
 			window_layer, status_bar_layer_get_layer(s_status_bar));
 	#endif
-		
+
 	reverse_menu_animation = false;
-	
+
 	if(bluetooth_connection_service_peek()) {
 		if(persist_exists(KEY_TOKEN)) {
 			no_foursquare = false;
 		} else {
 			no_foursquare = true;
- 			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+ 			text_layer_set_text(text_layer_primary, _("Connect to Foursquare on Phone"));
 // 			text_layer_set_text(text_layer_primary, "Mos Eisley Cantina");
 // 			text_layer_set_text(text_layer_primary_address, "24m - 7 Jawa Way");
 		}
 	} else {
 		no_internet = true;
-		text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NO_PHONE);
+		text_layer_set_text(text_layer_primary, _("Error:\n No connection to phone"));
 	}
 }
 
@@ -904,14 +953,16 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *text_tuple_name = dict_find(iter, SPOON_NAME);
 	Tuple *text_tuple_id = dict_find(iter, SPOON_ID);
 	Tuple *text_tuple_address = dict_find(iter, SPOON_ADDRESS);
+	Tuple *text_tuple_distance = dict_find(iter, SPOON_DISTANCE);
+	Tuple *text_tuple_distance_unit = dict_find(iter, SPOON_UNIT);
 	Tuple *text_tuple_error = dict_find(iter, SPOON_ERROR);
 	Tuple *text_tuple_ready = dict_find(iter, SPOON_READY);
 	Tuple *text_tuple_config = dict_find(iter, SPOON_CONFIG);
-	
+
 // 	APP_LOG(APP_LOG_LEVEL_DEBUG, "In received");
-	
+
 	if(text_tuple_error) {
-		text_layer_set_text(text_layer_primary, text_tuple_error->value->cstring);
+		text_layer_set_text(text_layer_primary, getErrorReason(text_tuple_error->value->int16));
 	} else if(text_tuple_config) {
 		#ifdef PBL_COLOR
 			int config = text_tuple_config->value->int16;
@@ -925,7 +976,8 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		}
 	} else if(text_tuple_token && !text_tuple_latlng) {
 // 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Token: %s", text_tuple_token->value->cstring);
-		text_layer_set_text(text_layer_primary, "Connected to Foursquare!");
+		text_layer_set_text(text_layer_primary, _("Connected to Foursquare!"));
+
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
 		persist_exists(KEY_TOKEN);
 		char key_stored[50];
@@ -939,18 +991,23 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			SpoonVenue venue;
 			venue.index = index;
 			strncpy(venue.id, text_tuple_id->value->cstring, sizeof(venue.id));
-			strncpy(venue.name, text_tuple_name->value->cstring, sizeof(venue.name));
+			strcpy(venue.name, text_tuple_name->value->cstring);
 
-			if(text_tuple_address) {
-				strncpy(venue.address, text_tuple_address->value->cstring, sizeof(venue.address));
+			if(text_tuple_address && strlen(text_tuple_address->value->cstring) > 0) {
+				strcpy(venue.address, text_tuple_address->value->cstring);
 			} else {
-				strncpy(venue.address, "-", sizeof(venue.address));
+				strcpy(venue.address, _("No Address"));
+			}
+			
+			if(text_tuple_distance && text_tuple_distance_unit) {
+				strcpy(venue.distance, text_tuple_distance->value->cstring);
+				venue.distance_unit = text_tuple_distance_unit->value->int16;
 			}
 
 			if(index == -1) {
 				venue.isRecent = true;
 				lastCheckinVenue = venue;
-				
+
 				text_layer_set_text(text_layer_last_checkin_venue, lastCheckinVenue.name);
 				// HACK: Using the address field for date here
  				text_layer_set_text(text_layer_last_checkin_date, lastCheckinVenue.address);
@@ -959,16 +1016,26 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				venues[venue.index] = venue;
 				num_venues++;
 			}
-			
+
 			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(SCREEN_WIDTH-40,50));
 				text_layer_set_text(text_layer_primary, venues[0].name);
-				text_layer_set_text(text_layer_primary_address, venues[0].address);
+				static char addressString[30];
+				#ifdef PBL_ROUND
+					text_layer_set_text(text_layer_primary_address, venues[0].address);
+					snprintf(addressString, sizeof(addressString), 
+							 "%s %s", venues[0].distance, get_unit(venues[0].distance_unit));
+					text_layer_set_text(text_layer_primary_distance, addressString);
+				#else
+					snprintf(addressString, sizeof(addressString), 
+							 "%s %s - %s", venues[0].distance, get_unit(venues[0].distance_unit), venues[0].address);
+					text_layer_set_text(text_layer_primary_address, addressString);
+				#endif
 				layer_mark_dirty(text_layer_get_layer(text_layer_primary));
 				layer_mark_dirty(layer_primary_back);
 			}
 			menu_layer_reload_data_and_mark_dirty(layer_menu_venues);
-			
+
 			if(index == MAX_VENUES - 1) {
 				is_refreshing = false;
 				vibes_short_pulse();
@@ -976,16 +1043,15 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		}
 	} else {
 		if(!text_tuple_token) {
-			text_layer_set_text(text_layer_primary, DIALOG_MESSAGE_NOT_CONNECTED);
+			text_layer_set_text(text_layer_primary, _("Connect to Foursquare on Phone"));
 		} else {
-			text_layer_set_text(text_layer_primary, "Cannot determine current location. :(");
+			text_layer_set_text(text_layer_primary, _("Cannot determine current location. :("));
 		}
 	}
 }
 
 void in_dropped_handler(AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message.");
-   	APP_LOG(APP_LOG_LEVEL_DEBUG, "In dropped: %i - %s", reason, translate_error(reason));
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message: %i - %s", reason, translate_error(reason));
 }
 
 static void init(void) {
@@ -994,7 +1060,10 @@ static void init(void) {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 	app_message_open(128, 128);
-	
+
+	// Init locale
+	locale_init();
+
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
 	window_set_window_handlers(s_main_window, (WindowHandlers) {
@@ -1006,10 +1075,11 @@ static void init(void) {
 
 static void deinit(void) {
   	animation_unschedule_all();
-	
+
 	text_layer_destroy_safe(text_layer_last_checkin_title);
 	text_layer_destroy_safe(text_layer_last_checkin_venue);
 	text_layer_destroy_safe(text_layer_last_checkin_address);
+	text_layer_destroy_safe(text_layer_primary_distance);
 	text_layer_destroy_safe(text_layer_last_checkin_date);
 
 	layer_destroy_safe(layer_last_checkin);

@@ -2,6 +2,7 @@
     "appKeys": {
         "address": 5,
         "config": 12,
+        "distance": 15,
         "error": 11,
         "facebook": 10,
         "id": 3,
@@ -14,7 +15,8 @@
         "refresh": 6,
         "result": 7,
         "token": 0,
-        "twitter": 9
+        "twitter": 9,
+        "unit": 16
     },
     "capabilities": [
         "location",
@@ -50,6 +52,26 @@
                 "file": "images/check_white.png",
                 "name": "IMAGE_CHECK_ON",
                 "type": "bitmap"
+            },
+            {
+                "file": "data/locale_spanish.bin",
+                "name": "LOCALE_SPANISH",
+                "type": "raw"
+            },
+            {
+                "file": "data/locale_german.bin",
+                "name": "LOCALE_GERMAN",
+                "type": "raw"
+            },
+            {
+                "file": "data/locale_french.bin",
+                "name": "LOCALE_FRENCH",
+                "type": "raw"
+            },
+            {
+                "file": "data/locale_english.bin",
+                "name": "LOCALE_ENGLISH",
+                "type": "raw"
             }
         ]
     },

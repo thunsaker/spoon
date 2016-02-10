@@ -32,11 +32,19 @@ AppTimer *countdown_timer;
 
 static int pulse = 0;
 static int progress = 100;
+#ifdef PBL_ROUND
+	static int DEGREE_INTERVAL = 15;
+	static int BASE_DEGREE = 0;
+	static int DEGREE_END = 195;
+#endif
 
 static GPath *s_check_large_path = NULL;
 
 void checkin_show(void);
 static void countdown_tick(void *ctx);
+
+static int SCREEN_HEIGHT;
+static int SCREEN_WIDTH;
 
 void checkin_result_receiver(bool result) {
 	hasResult = true;
@@ -93,18 +101,24 @@ void checkin_send_request(char venue_guid[128], char venue_name[512], int privat
 }
 
 void pulse_check_tick() {
-	if(pulse == 0) {
-		pulse = 1;
-		s_check_large_path = gpath_create(&CHECK_LARGE_2_PATH_POINTS);
-	} else {
-		pulse = 0;
-		s_check_large_path = gpath_create(&CHECK_LARGE_PATH_POINTS);
-	}
+	#ifdef PBL_ROUND
+		// Insert code to iterate through the circle
+		// Degree Tracker
+		BASE_DEGREE += DEGREE_INTERVAL;
+	#else
+		if(pulse == 0) {
+			pulse = 1;
+			s_check_large_path = gpath_create(&CHECK_LARGE_2_PATH_POINTS);
+		} else {
+			pulse = 0;
+			s_check_large_path = gpath_create(&CHECK_LARGE_PATH_POINTS);
+		}
+	#endif
 
 	layer_mark_dirty(layer_check);
 	if(hasResult) {
 		#ifdef PBL_COLOR
-			back_color = checkinResult ? GColorIslamicGreen.argb : GColorSunsetOrange.argb;
+			back_color = checkinResult ? GColorJaegerGreen.argb : GColorSunsetOrange.argb;
 		#endif
 			
 		s_check_large_path = gpath_create(&CHECK_LARGE_PATH_POINTS);
@@ -115,7 +129,7 @@ void pulse_check_tick() {
 		app_timer_cancel_safe(checkin_timeout_timer);
 		start_countdown();
 	} else {
-		pulse_check_timer = app_timer_register(100, pulse_check_tick, NULL);
+		pulse_check_timer = app_timer_register(PBL_IF_ROUND_ELSE(50, 100), pulse_check_tick, NULL);
 	}
 }
 
@@ -143,13 +157,35 @@ void draw_countdown_bar(Layer *cell_layer, GContext *ctx) {
 #endif
 
 void draw_layer_check(Layer *cell_layer, GContext *ctx) {
-	graphics_context_set_stroke_color(ctx, GColorBlack);
-	gpath_draw_outline(ctx, s_check_large_path);
-	#ifdef PBL_SDK_3
-		graphics_context_set_stroke_width(ctx, 2);
+	#ifdef PBL_ROUND
+		if(!hasResult) {
+			GRect bounds = layer_get_frame(layer_back);
+			GRect frame = grect_inset(bounds, GEdgeInsets(0));
+
+			graphics_context_set_fill_color(ctx, GColorWhite);
+			int new_start_degree = BASE_DEGREE + DEGREE_INTERVAL;
+			DEGREE_END = new_start_degree + 195;
+			graphics_fill_radial(ctx, frame, GOvalScaleModeFitCircle, 10,
+								 DEG_TO_TRIGANGLE(new_start_degree), DEG_TO_TRIGANGLE(DEGREE_END));
+		} else {
+			graphics_context_set_stroke_color(ctx, GColorBlack);
+			gpath_draw_outline(ctx, s_check_large_path);
+			#ifdef PBL_SDK_3
+				graphics_context_set_stroke_width(ctx, 2);
+			#endif
+			graphics_context_set_fill_color(ctx, GColorWhite);
+			gpath_draw_filled(ctx, s_check_large_path);
+			gpath_move_to(s_check_large_path, GPoint(15,0));
+		}
+	#else
+		graphics_context_set_stroke_color(ctx, GColorBlack);
+		gpath_draw_outline(ctx, s_check_large_path);
+		#ifdef PBL_SDK_3
+			graphics_context_set_stroke_width(ctx, 2);
+		#endif
+		graphics_context_set_fill_color(ctx, GColorWhite);
+		gpath_draw_filled(ctx, s_check_large_path);
 	#endif
-	graphics_context_set_fill_color(ctx, GColorWhite);
-	gpath_draw_filled(ctx, s_check_large_path);
 }
 
 void draw_layer_back(Layer *cell_layer, GContext *ctx) {
@@ -158,13 +194,16 @@ void draw_layer_back(Layer *cell_layer, GContext *ctx) {
 	#else
 		graphics_context_set_fill_color(ctx, GColorBlack);
 	#endif
-	graphics_fill_rect(ctx, GRect(0,0,144,168), 0, GCornerNone);
+	graphics_fill_rect(ctx, GRect(0,0,SCREEN_WIDTH,SCREEN_HEIGHT), 0, GCornerNone);
 }
 
 static void window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
-
+	
 	GRect bounds = layer_get_frame(window_layer);
+	SCREEN_HEIGHT = bounds.size.h;
+	SCREEN_WIDTH = bounds.size.w;
+
 	#ifdef PBL_COLOR
 		back_color = get_accent_color();
 	#endif
@@ -182,7 +221,7 @@ static void window_load(Window *window) {
 	layer_add_child(window_layer, layer_back);
 
 	// Text Status
-	text_layer_status = text_layer_create(GRect(10,120 - STATUS_BAR_OFFSET,bounds.size.w-20,40));
+	text_layer_status = text_layer_create(GRect(10,120 - STATUS_BAR_OFFSET,bounds.size.w-20,60));
 	#ifdef PBL_COLOR
 		text_layer_set_text_color(text_layer_status, GColorBlack);
 	#else
@@ -190,8 +229,11 @@ static void window_load(Window *window) {
 	#endif
 	text_layer_set_background_color(text_layer_status, GColorClear);
 	text_layer_set_text_alignment(text_layer_status, GTextAlignmentCenter);
+	#ifdef PBL_ROUND
+		text_layer_enable_screen_text_flow_and_paging(text_layer_status, 20);
+	#endif
 	text_layer_set_font(text_layer_status, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
-	text_layer_set_text(text_layer_status, _("Checking in..."));
+ 	text_layer_set_text(text_layer_status, _("Checking in..."));
 	layer_add_child(window_layer, text_layer_get_layer(text_layer_status));
 
 	// Check

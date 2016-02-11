@@ -1,22 +1,20 @@
 {
     "appKeys": {
         "address": 5,
-        "config": 12,
-        "distance": 15,
-        "error": 11,
-        "facebook": 10,
+        "broadcast": 8,
+        "config": 10,
+        "distance": 13,
+        "error": 9,
         "id": 3,
         "index": 2,
         "location": 1,
         "name": 4,
-        "private": 8,
-        "ready": 14,
-        "recent": 13,
+        "ready": 12,
+        "recent": 11,
         "refresh": 6,
         "result": 7,
         "token": 0,
-        "twitter": 9,
-        "unit": 16
+        "unit": 14
     },
     "capabilities": [
         "location",
@@ -84,7 +82,7 @@
         "chalk"
     ],
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
-    "versionLabel": "2.110",
+    "versionLabel": "2.200",
     "watchapp": {
         "watchface": false
     }

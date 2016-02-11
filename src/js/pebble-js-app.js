@@ -253,7 +253,7 @@ function sendAppMessage() {
 	}
 }
 
-function attemptCheckin(id, name, private, twitter, facebook) {
+function attemptCheckin(id, name, broadcast) {
 	var userToken = localStorage.foursquare_token.toString();
 	if(userToken) {
 		if (navigator.geolocation) {
@@ -262,18 +262,22 @@ function attemptCheckin(id, name, private, twitter, facebook) {
 				var checkinRequestUrl = 'https://api.foursquare.com/v2/checkins/add?oauth_token=' + userToken + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&venueId=' + id + api_mode;
 // 				console.log("checkinRequestUrl: " + checkinRequestUrl);
 				var broadcastType = '';
-				if(private == 1) {
-					broadcastType = 'private';
-				} else {
-					if(twitter == 1) {
+				switch (broadcast) {
+					case 1:
+						broadcastType = 'private';
+						break;
+					case 2:
 						broadcastType = 'twitter';
-					}
-					if(facebook == 1) {
-						broadcastType += (broadcastType.length > 0 ? ',' : '') + 'facebook';
-					}
+						break;
+					case 3:
+						broadcastType = 'facebook';
+						break;
+					case 4: // both
+						broadcastType = 'twitter,facebook';
+						break;
 				}
 					
-				if(broadcastType.length > 0) {
+				if(broadcast > 0) {
 					checkinRequestUrl += '&broadcast=' + broadcastType;
 				}
 // 				console.log("After broadcast checkinRequestUrl: " + checkinRequestUrl);
@@ -322,7 +326,7 @@ Pebble.addEventListener('appmessage',
 //  		console.log('received appmessage');
 		if (e.payload.id) {
 // 			console.log('received appmessage id: ' + e.payload.id);
-			attemptCheckin(e.payload.id,e.payload.name,e.payload.private,e.payload.twitter,e.payload.facebook);
+			attemptCheckin(e.payload.id,e.payload.name,e.payload.broadcast);
 		} else if (e.payload.refresh) {
 // 			console.log('received appmessage: ' + e.payload);
 			max_venues = e.payload.refresh + 1;

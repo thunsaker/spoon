@@ -1,6 +1,8 @@
+var redirectUrl = "pebblejs://close";
+var config = {};
+var token = {};
+
 $(document).ready(function() {
-    var config = {};
-    var token = {};
     var tokenResult = getToken();
     if(tokenResult !== null) {
         token = tokenResult;
@@ -12,19 +14,23 @@ $(document).ready(function() {
             $('#config-connect-error').show();
         }
     }
+});
 
-    var redirectUrl = "pebblejs://close";
 
-    $('#btn-save').click(function() {
-        config.token = token;
+$('#btn-save').click(function() {
+    config.token = token;
 
-        var theme = $("[name='radio-theme']:checked").val();
-        config.theme = +theme;
+    var theme = $("[name='radio-theme']:checked").val();
+    config.theme = theme;
 
-        var unitValue = $("[name='tab-units'].active").text();
-        var unit = unitValue.substr(unitValue.length - 3, 1);
-        config.unit = unit == 'k' ? 0 : 1;
-        
-        window.location.replace(redirectUrl + '#' + JSON.stringify(config));
-    });
+    var unitValue = $("[name='tab-units'].active").text();
+    var unit = unitValue.substr(unitValue.length - 3, 1);
+    config.unit = unit == 'k' ? 0 : 1;
+    
+    var timeline = $("[name='toggle-timeline']:checked").val();
+    config.timeline = timeline;
+    
+    alert("Huzzah! - Token: " + JSON.stringify(config));
+    
+    window.location.replace(redirectUrl + '#' + JSON.stringify(config));
 });

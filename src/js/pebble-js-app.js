@@ -117,23 +117,20 @@ function fetchClosestVenues(token, position) {
 							var distance = element.location.distance;
 							// TODO: Once configuration is in place
  							if(localStorage.spoon_unit === null || localStorage.spoon_unit === "0") {
-// 								venueDistance = element.location.distance >= 1000 ? (element.location.distance/1000).toFixed(2) + " km - " : element.location.distance + " m - ";
 								venueDistanceUnit = distance >= 1000 ? 1 : 0;
 								venueDistance = distance >= 1000 ? (distance/1000).toFixed(2) : distance; // Distance in m
 							} else {
  								distance *= mToFeet; // Distance in Feet
-// 								venueDistance = distance >= ftInMile ? (distance/ftInMile).toFixed(2) + " mi - " : distance.toFixed(0) + " ft - ";
 								venueDistanceUnit = distance >= ftInMile ? 3 : 2;
 								venueDistance = distance >= ftInMile ? (distance/ftInMile).toFixed(2) : distance.toFixed(0);
 							}
-// 							venueAddress = venueDistance + venueAddress;
 						}
 
 						if(isNewList) {
-							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance, 'unit':venueDistanceUnit, 'index':offsetIndex}});
+							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 							isNewList = false;
 						} else {
-							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance, 'unit':venueDistanceUnit, 'index':offsetIndex}});
+							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 						}
 
 						// Send them in clusters of 5

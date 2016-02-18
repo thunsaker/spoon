@@ -631,11 +631,14 @@ static int16_t menu_get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *c
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) { }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
+	char addressString[30];
+	snprintf(addressString, sizeof(addressString), 
+			 "%s %s - %s", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit), venues[cell_index->row].address);
 	#ifdef PBL_PLATFORM_APLITE
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			menu_cell_basic_draw(ctx, cell_layer, _("Foursquare"), _("Powered"), image_cog);
-		} else {
-			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, venues[cell_index->row].address, NULL);
+		} else if(strlen(venues[cell_index->row].name) > 0) {
+			menu_cell_basic_draw(ctx, cell_layer, venues[cell_index->row].name, addressString, NULL);
 		}
 	#else
 		GRect bounds = layer_get_bounds(cell_layer);
@@ -665,9 +668,6 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 			graphics_context_set_compositing_mode(ctx, GCompOpSet);
 			graphics_draw_bitmap_in_rect(ctx, image_cog, cog_bounds);
 		} else if (strlen(venues[cell_index->row].name) > 0) {
-			static char addressString[30];
-			snprintf(addressString, sizeof(addressString), 
-					 "%s %s - %s", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit), venues[cell_index->row].address);
 			#ifdef PBL_ROUND
 				GSize text_size = graphics_text_layout_get_content_size(
 					venues[cell_index->row].name,

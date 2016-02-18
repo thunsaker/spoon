@@ -28,9 +28,7 @@ $('#btn-save').click(function() {
     config.unit = unit == 'k' ? 0 : 1;
     
     var timeline = $("[name='toggle-timeline']:checked").val();
-    config.timeline = timeline;
-    
-    alert("Huzzah! - Token: " + JSON.stringify(config));
-    
+    config.timeline = timeline == 'on' ? 1 : 0;
+
     window.location.replace(redirectUrl + '#' + JSON.stringify(config));
 });

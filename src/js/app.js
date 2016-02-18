@@ -18,6 +18,15 @@ var ftInMile = 5280;
 var lang = "en";
 var currentConfig = {};
 
+var getCurrentConfig = function() {
+	currentConfig.token = 
+		localStorage.foursquare_token !== null && localStorage.foursquare_token.length > 0 ? 
+		"[TOKEN_NOT_SHOWN]" : "";
+	currentConfig.theme = parseInt(localStorage.spoon_theme);
+	currentConfig.unit = localStorage.spoon_unit;
+	currentConfig.timeline = parseInt(localStorage.spoon_timeline);
+};
+
 var createPin = function(id, venue, address) {
 	return {
 		"id": id,
@@ -40,6 +49,7 @@ Pebble.addEventListener('ready',
 	function(e) {
 		Pebble.sendAppMessage({'ready':true});
 		lang = navigator.language.substring(0,2);
+		getCurrentConfig();
 	});
 
 Pebble.addEventListener('showConfiguration',
@@ -61,22 +71,14 @@ Pebble.addEventListener('webviewclosed',
 			Pebble.sendAppMessage({'error':3});
 		}
 		
-		if(configuration.theme !== null) {
-			localStorage.spoon_theme = configuration.theme;
-			localStorage.spoon_timeline = configuration.timeline;
-			notifyPebbleConfiguration(configuration.theme);
-		}
+		localStorage.spoon_unit = configuration.unit;
+		var theme = parseInt(configuration.theme);
+		localStorage.spoon_theme = theme;
+		notifyPebbleConfiguration(theme);
+		localStorage.spoon_timeline = parseInt(configuration.timeline);
+		getCurrentConfig();
 	}
 );
-
-// var getCurrentConfigString = function() {
-// 	var configStrings = '#';
-// 	currentConfig.token = localStorage.foursquare_token.length > 0 ? "[TOKEN_NOT_SHOWN]" : "";
-// 	configStrings += currentConfig.token;
-// 	currentConfig.theme = localStorage.spoon_theme;
-// 	currentConfig.unit = localStorage.spoon_unit;
-// 	currentConfig.timeline = localStorage.spoon_timeline;
-// };
 
 function notifyPebbleConnected(token) {
 // 	console.log("Sending the token: " + token);
@@ -85,7 +87,7 @@ function notifyPebbleConnected(token) {
 }
 
 function notifyPebbleConfiguration(theme) {
-	appMessageQueue.push({'message': {'config': theme, 'name': 'The Theme!' }});
+	appMessageQueue.push({'message': {'config': theme }});
 	sendAppMessage();
 }
 
@@ -310,16 +312,14 @@ function attemptCheckin(id, name, broadcast) {
 									
 									// TODO: Maybe show the user a popular tip after checkin?
 									notifyPebbleCheckinOutcome(true, venue.name, '', -1);
-									
-									// TODO: Make this configurable
-// 									if(localStorage.spoon_timeline === 1) {
+									if(currentConfig.timeline === 1) {
 										var pin = createPin(checkin.id,venue.name,venue.location.address);
-										console.log('Inserting pin now: ' + JSON.stringify(pin));
+// 										console.log('Inserting pin now: ' + JSON.stringify(pin));
 										// Push the pin
 										timeline.insertUserPin(pin, function(responseText) { 
-											console.log('Result: ' + responseText);
+											console.log('User Pin Result: ' + responseText);
 										});
-// 									}
+									}
 								}
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));

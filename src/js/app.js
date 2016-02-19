@@ -209,6 +209,7 @@ function fetchMostRecentCheckin(token) {
  								checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString() 
 								: "";
 						} else {
+							moment.locale(lang);
 							checkinString = moment.unix(element.createdAt).fromNow();
 						}
 						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
@@ -322,7 +323,6 @@ function attemptCheckin(id, name, broadcast) {
 									if(currentConfig.timeline === 1) {
 										var pin = createPin(checkin.id,venue.name,venue.location.address);
 // 										console.log('Inserting pin now: ' + JSON.stringify(pin));
-										// Push the pin
 										timeline.insertUserPin(pin, function(responseText) { 
 											console.log('User Pin Result: ' + responseText);
 										});

@@ -1,5 +1,8 @@
 // 2016 Thomas Hunsaker @thunsaker
 
+var timeline = require('timeline');
+var moment = require('moment');
+
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 1000;
 var appMessageTimeout = 1000;
@@ -14,6 +17,30 @@ var sending = false;
 var mToFeet = 3.2808;
 var ftInMile = 5280;
 var lang = "en";
+var currentConfig = {};
+
+var getCurrentConfig = function() {
+	currentConfig.token = 
+		localStorage.foursquare_token !== null && localStorage.foursquare_token.length > 0 ? 
+		"[TOKEN_NOT_SHOWN]" : "";
+	currentConfig.theme = parseInt(localStorage.spoon_theme);
+	currentConfig.unit = localStorage.spoon_unit;
+	currentConfig.timeline = parseInt(localStorage.spoon_timeline);
+};
+
+var createPin = function(id, venue, address) {
+	return {
+		"id": id,
+		"time": new Date(),
+		"duration":0,
+		"layout": {
+			"type": "genericPin",
+			"title": venue,
+			"locationName": address,
+			"tinyIcon": "system://images/LOCATION"
+		}
+	};
+};
 
 var appendLangToUrl = function(url) {
 	return url += "&locale=" + lang;
@@ -23,40 +50,34 @@ Pebble.addEventListener('ready',
 	function(e) {
 		Pebble.sendAppMessage({'ready':true});
 		lang = navigator.language.substring(0,2);
+		getCurrentConfig();
 	});
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
-		// TODO: Add the existing user settings to the url
-// 		Pebble.openURL('https://thunsaker.github.io/spoon/config'); // Prod
-		
-		var client_id = '0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5';
- 		var callback_uri = 'http%3A%2F%2Fthomashunsaker.com%2Fapps%2Fsoup%2Fspoon_callback.html';
-		if(client_id && callback_uri) {
-			Pebble.openURL('https://foursquare.com/oauth2/authorize?client_id=' + client_id + '&response_type=token&redirect_uri=' + callback_uri);
-		} else {
-			Pebble.showSimpleNotificationOnPebble('Spoon', 'Invalid authorization url, please check client_id and callback_uri variables.');
-		}
+ 		Pebble.openURL('https://thunsaker.github.io/spoon/config');
 	});
 
 Pebble.addEventListener('webviewclosed',
-	function(e) {	
+	function(e) {
 		var configuration = JSON.parse(e.response);
-		if(configuration.result) {
- 			localStorage.foursquare_token = configuration.token;
+		if(configuration.token.result) {
+ 			localStorage.foursquare_token = configuration.token.token;
 			notifyPebbleConnected(localStorage.foursquare_token.toString());
 			isNewList = true;
+			if(configuration.unit !== null)
+				localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
 			getClosestVenues();
 		} else {
-			Pebble.showSimpleNotificationOnPebble('Spoon', ':( Connection Failed. Try Again.');
+			Pebble.sendAppMessage({'error':3});
 		}
 		
-		// TODO: Config Stuff
-// 		if(configuration.theme !== null && configuration.unit !== null) {
-// 			localStorage.spoon_theme = configuration.theme;
-//  		localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
-// 			notifyPebbleConfiguration(configuration.theme);
-// 		}
+		localStorage.spoon_unit = configuration.unit;
+		var theme = parseInt(configuration.theme);
+		localStorage.spoon_theme = theme;
+		notifyPebbleConfiguration(theme);
+		localStorage.spoon_timeline = parseInt(configuration.timeline);
+		getCurrentConfig();
 	}
 );
 
@@ -67,7 +88,7 @@ function notifyPebbleConnected(token) {
 }
 
 function notifyPebbleConfiguration(theme) {
-	appMessageQueue.push({'message': {'config': theme, 'name': 'The Theme!' }});
+	appMessageQueue.push({'message': {'config': theme }});
 	sendAppMessage();
 }
 
@@ -177,13 +198,20 @@ function fetchMostRecentCheckin(token) {
 						var venueId = element.venue.id.replace('\'','');
 						var venueName = element.venue.name.length > 45 ? 
 							element.venue.name.substring(0,45).replace('\'','') 
-						: element.venue.name.replace('\'','');
+							: element.venue.name.replace('\'','');
+						var checkinString = "";
 						var checkinDate = new Date(element.createdAt*1000);
  						var minutes = checkinDate.getMinutes();
 						minutes = minutes < 10 ? "0" + minutes : minutes;
-						var checkinString = checkinDate !== null ? 
- 							checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString() 
-							: "";
+						// Show relative time if the last checkin was less than 1 day ago
+						if(Date.now() - checkinDate.getTime() > 86400000) {
+							checkinString = checkinDate !== null ? 
+ 								checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString() 
+								: "";
+						} else {
+							moment.locale(lang);
+							checkinString = moment.unix(element.createdAt).fromNow();
+						}
 						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
 					});
 				} else {
@@ -285,10 +313,20 @@ function attemptCheckin(id, name, broadcast) {
 						if (req.status == 200) {
 							if (req.responseText) {
 								var response = JSON.parse(req.responseText);
-								//console.log('Response: ' + req.responseText);
+// 								console.log('Response: ' + req.responseText);
 								if(response) {
+									var checkin = response.response.checkin;
+									var venue = checkin.venue;
+									
 									// TODO: Maybe show the user a popular tip after checkin?
-									notifyPebbleCheckinOutcome(true, name, '', -1);
+									notifyPebbleCheckinOutcome(true, venue.name, '', -1);
+									if(currentConfig.timeline === 1) {
+										var pin = createPin(checkin.id,venue.name,venue.location.address);
+// 										console.log('Inserting pin now: ' + JSON.stringify(pin));
+										timeline.insertUserPin(pin, function(responseText) { 
+											console.log('User Pin Result: ' + responseText);
+										});
+									}
 								}
 							} else {
 								console.log('Invalid response received! ' + JSON.stringify(req));

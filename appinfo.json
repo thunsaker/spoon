@@ -21,7 +21,7 @@
         "configurable"
     ],
     "companyName": "Thomas Hunsaker",
-    "enableMultiJS": false,
+    "enableMultiJS": true,
     "longName": "Spoon",
     "projectType": "native",
     "resources": {
@@ -82,7 +82,7 @@
         "chalk"
     ],
     "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
-    "versionLabel": "2.210",
+    "versionLabel": "3.0",
     "watchapp": {
         "watchface": false
     }

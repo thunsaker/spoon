@@ -131,13 +131,13 @@ char *getErrorReason(int error_code) {
 char *get_unit(int unit) {
 	switch(unit) {
 		case 1:
-			return "km";
+			return _("km");
 		case 2:
-			return "ft";
+			return _("ft");
 		case 3:
-			return "mi";
+			return _("mi");
 		default:
-			return "m";
+			return _("m");
 	}
 }
 

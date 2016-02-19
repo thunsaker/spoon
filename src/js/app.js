@@ -1,6 +1,7 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 var timeline = require('timeline');
+var moment = require('moment');
 
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 1000;
@@ -197,13 +198,19 @@ function fetchMostRecentCheckin(token) {
 						var venueId = element.venue.id.replace('\'','');
 						var venueName = element.venue.name.length > 45 ? 
 							element.venue.name.substring(0,45).replace('\'','') 
-						: element.venue.name.replace('\'','');
+							: element.venue.name.replace('\'','');
+						var checkinString = "";
 						var checkinDate = new Date(element.createdAt*1000);
  						var minutes = checkinDate.getMinutes();
 						minutes = minutes < 10 ? "0" + minutes : minutes;
-						var checkinString = checkinDate !== null ? 
- 							checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString() 
-							: "";
+						// Show relative time if the last checkin was less than 1 day ago
+						if(Date.now() - checkinDate.getTime() > 86400000) {
+							checkinString = checkinDate !== null ? 
+ 								checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString() 
+								: "";
+						} else {
+							checkinString = moment.unix(element.createdAt).fromNow();
+						}
 						appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':checkinString, 'index':-1 }});
 					});
 				} else {

@@ -48,3 +48,14 @@
 .show {
   display: block;
 }
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: block;
+  background: #eaeaea;
+  padding: 10px 0;
+}
+.fixed-bottom-padding {
+  margin-bottom: 60px;
+}

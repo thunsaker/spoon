@@ -3,11 +3,19 @@ var config = {};
 var token = {};
 
 $(document).ready(function() {
+    var $btnConfig = $('#config-connect-button');
+    var pebbleTokenResult = getPebbleToken();
+    if(pebbleTokenResult !== null && 
+       pebbleTokenResult.pebble_token !== null) {
+        var href = $btnConfig.attr('href');
+        $btnConfig.attr('href', href + "?pebble_token=" + pebbleTokenResult.pebble_token);
+    }
+    
     var tokenResult = getToken();
     if(tokenResult !== null) {
         token = tokenResult;
         if(token.result === true) {
-            $('#config-connect-button').hide();
+            $btnConfig.hide();
             $('#config-connect-info').show();
         } else {
             $('#config-connect-info').hide();

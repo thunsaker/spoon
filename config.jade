@@ -18,6 +18,13 @@ html(lang='en')
                         | Connected! Save settings below to start using Spoon!
                 p.bottom-margin.alert-background.hide(id='config-connect-error')
                     | Authorizing Foursquare failed. :( Try again.
+                    
+        .item-container.left
+            .item-container-header Distance Units
+            .item-container-content
+                .item.tab-buttons
+                    a.tab-button.active(name='tab-units') Kilometers (km)
+                    a.tab-button(name='tab-units') Miles (mi)
 
         .item-container.left
             .item-container-header Theme
@@ -35,20 +42,13 @@ html(lang='en')
                 label.item Classic (Black / White)
                     input.item-radio(type='radio', name='radio-theme', value='5')
 
-        .item-container.left
-            .item-container-header Distance Units
-            .item-container-content
-                .item.tab-buttons
-                    a.tab-button.active(name='tab-units') Kilometers (km)
-                    a.tab-button(name='tab-units') Miles (mi)
-                    
-        .item-container.left
+        .item-container.left.fixed-bottom-padding
             .item-container-header Experimental
             .item-container-content
                 label.item Add Checkins to Timeline
                     input.item-toggle(type='checkbox' name='toggle-timeline' checked)
 
-        .item-container
+        .item-container.fixed-bottom
             .button-container
                 button.item-button(id='btn-save') SAVE SETTINGS
 

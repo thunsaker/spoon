@@ -20,37 +20,31 @@ html(lang='en')
                     | Authorizing Foursquare failed. :( Try again.
                     
         .item-container.left
-            .item-container-header Distance Units
+            .item-container-header User Preferences
             .item-container-content
-                .item.tab-buttons
-                    a.tab-button.active(name='tab-units') Kilometers (km)
-                    a.tab-button(name='tab-units') Miles (mi)
+                label.item Distance Units
+                    .item.tab-buttons
+                        a.tab-button.active(name='tab-units') Kilometers (km)
+                        a.tab-button(name='tab-units') Miles (mi)
+                    
+                label.item Theme
+                    select.item-select
+                        option.item-select-option.selected(name='radio-theme', value='0') Green / Pink
+                        option.item-select-option(name='radio-theme', value='1') Orange / Green
+                        option.item-select-option(name='radio-theme', value='2') Pink / Blue
+                        option.item-select-option(name='radio-theme', value='3') Yellow / Purple
+                        option.item-select-option(name='radio-theme', value='4') Blue / Orange
+                        option.item-select-option(name='radio-theme', value='5') Classic (Black / White)
 
         .item-container.left
-            .item-container-header Theme
-            .item-container-content
-                label.item Green / Pink
-                    input.item-radio(type='radio', name='radio-theme', value='0', checked)
-                label.item Orange / Green
-                    input.item-radio(type='radio', name='radio-theme', value='1')
-                label.item Pink / Blue
-                    input.item-radio(type='radio', name='radio-theme', value='2')
-                label.item Yellow / Purple
-                    input.item-radio(type='radio', name='radio-theme', value='3')
-                label.item Blue / Orange
-                    input.item-radio(type='radio', name='radio-theme', value='4')
-                label.item Classic (Black / White)
-                    input.item-radio(type='radio', name='radio-theme', value='5')
-
-        .item-container.left.fixed-bottom-padding
             .item-container-header Experimental
             .item-container-content
                 label.item Add Checkins to Timeline
                     input.item-toggle(type='checkbox' name='toggle-timeline' checked)
 
-        .item-container.fixed-bottom
+        .item-container
             .button-container
-                button.item-button(id='btn-save') SAVE SETTINGS
+                button.item-button(id='btn-save') SAVE
 
     script(src='js/slate.min.js')
     script(src='js/token.js')

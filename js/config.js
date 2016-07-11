@@ -3,12 +3,11 @@ var config = {};
 var token = {};
 var pebbleToken;
 
-// Initialize Firebase
-var firebaseConfig = {
+var configs = {
     apiKey: process.env.FIREBASE,
     databaseURL: "https://spoon-943a4.firebaseio.com"
 };
-var app = firebase.initializeApp(firebaseConfig);
+var app = firebase.initializeApp(configs);
 var database = app.database();
 
 var $btnConfig = $('#config-connect-button');

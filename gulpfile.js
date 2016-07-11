@@ -37,7 +37,7 @@ gulp.task('stylus', function() {
         .pipe(gulp.dest('./dist/css/'));
 });
 
-gulp.task('copy', ['copy-js'], function() {
+gulp.task('copy', ['copy-js', 'copy-css'], function() {
     // css
     gulp.src([
             'bower_components/pebble-slate/dist/css/slate.min.css'
@@ -70,6 +70,14 @@ gulp.task('copy-js', function() {
             'js/*.js'
         ])
         .pipe(gulp.dest('./dist/js'));
+});
+
+gulp.task('copy-css', function() {
+    // js
+    gulp.src([
+            'css/material-orange-cyan.min.css'
+        ])
+        .pipe(gulp.dest('./dist/css'));
 });
 
 gulp.task('watch', ['default'], function() {

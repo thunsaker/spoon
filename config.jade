@@ -5,7 +5,7 @@ html(lang='en')
         meta(content='width=device-width, initial-scale=1.0, maximum-scale=1.0', name='viewport')
         link(rel='stylesheet', href='css/config.css')
         link(rel='stylesheet', href='css/slate.min.css')
-    body.center
+    body.text-center
         .item-container
             .item-container-content
                 .item 
@@ -14,21 +14,25 @@ html(lang='en')
                     a.button-container.bottom-margin(id='config-connect-button' 
                         href='https://foursquare.com/oauth2/authorize?client_id=0KM5OWM4PWMHTEVCDVSWNBPRSXNFLRMODVBP0OGX31JELKR5&response_type=token&redirect_uri=http://blog.thomashunsaker.com/spoon/config.html')
                         img(src='img/foursquare-connect.png')
-                    p.success-background.hide(id='config-connect-info')
-                        | Connected! Save settings below to start using Spoon!
+                    div.hide(id='config-connect-wrapper')
+                        p.success-background.bottom-margin(id='config-connect-info')
+                            | Connected! Save settings below to start using Spoon!
+                        a.button-container(id='config-connect-reauthorize'
+                            href='#') Reauthorize
+                    
                 p.bottom-margin.alert-background.hide(id='config-connect-error')
                     | Authorizing Foursquare failed. :( Try again.
-                    
         .item-container.left
+            .progress.orange.pull-right.margin-right-10(id='progress-save')
             .item-container-header User Preferences
             .item-container-content
                 label.item Distance Units
                     .item.tab-buttons
-                        a.tab-button.active(name='tab-units') Kilometers (km)
-                        a.tab-button(name='tab-units') Miles (mi)
+                        a.tab-button.active(id='tab-units-km', name='tab-units') Kilometers (km)
+                        a.tab-button(id='tab-units-mi', name='tab-units') Miles (mi)
                     
                 label.item Theme
-                    select.item-select
+                    select.item-select(id='select-theme')
                         option.item-select-option.selected(name='radio-theme', value='0') Green / Pink
                         option.item-select-option(name='radio-theme', value='1') Orange / Green
                         option.item-select-option(name='radio-theme', value='2') Pink / Blue
@@ -40,7 +44,7 @@ html(lang='en')
             .item-container-header Experimental
             .item-container-content
                 label.item Add Checkins to Timeline
-                    input.item-toggle(type='checkbox' name='toggle-timeline' checked)
+                    input.item-toggle(id='check-timeline' type='checkbox' name='toggle-timeline' checked)
 
         .item-container
             .button-container
@@ -48,4 +52,8 @@ html(lang='en')
 
     script(src='js/slate.min.js')
     script(src='js/token.js')
+    script(src='https://www.gstatic.com/firebasejs/3.1.0/firebase.js')
+    script(src='https://www.gstatic.com/firebasejs/3.1.0/firebase-app.js')
+    script(src='https://www.gstatic.com/firebasejs/3.1.0/firebase-database.js')
     script(src='js/config.js')
+    script(src='js/persist.js')

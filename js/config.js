@@ -4,7 +4,6 @@ var token = {};
 var pebbleToken;
 
 var configs = {
-    apiKey: process.env.FIREBASE,
     databaseURL: "https://spoon-943a4.firebaseio.com"
 };
 var app = firebase.initializeApp(configs);

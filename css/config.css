@@ -10,7 +10,7 @@
   src: url("../fonts/ptsans-regular.woff") format('woff');
 }
 .progress {
-  margin: 10px auto;
+  margin: 10px;
   height: 11px;
   width: 43px;
   background: url("../img/slate-progress-orange.gif") center;
@@ -18,8 +18,12 @@
 .progress.blue {
   background: url("../img/slate-progress-blue.gif") center;
 }
-.center {
+.text-center {
   text-align: center;
+}
+.center {
+  margin-left: auto;
+  margin-right: auto;
 }
 .left {
   text-align: left;
@@ -47,4 +51,27 @@
 }
 .show {
   display: block;
+}
+.fixed-bottom {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: block;
+  background: #eaeaea;
+  padding: 10px 0;
+}
+.fixed-bottom-padding {
+  margin-bottom: 60px;
+}
+.pull-right {
+  float: right !important;
+}
+.pull-left {
+  float: left !important;
+}
+.margin-right-10 {
+  margin-right: 10;
+}
+.margin-left-10 {
+  margin-left: 10;
 }

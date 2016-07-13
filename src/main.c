@@ -962,14 +962,19 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 // 	APP_LOG(APP_LOG_LEVEL_DEBUG, "In received");
 
 	if(text_tuple_error) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Error received from js");
 		text_layer_set_text(text_layer_primary, getErrorReason(text_tuple_error->value->int16));
-	} else if(text_tuple_config) {
+	} else if(text_tuple_config && text_tuple_distance_unit) {
 		#ifdef PBL_COLOR
 			int config = text_tuple_config->value->int16;
 			config_init(config);
 			persist_write_int(KEY_THEME, config);
 			setup_theme_colors(config);
 		#endif
+		
+		int unit = text_tuple_distance_unit->value->int16;
+		persist_write_int(KEY_UNIT, unit);
+		config_set_unit(unit);	
 	} else if(text_tuple_ready) {
 		if(!no_foursquare) {
 			getListOfLocations();

@@ -2,6 +2,7 @@ var redirectUrl = "pebblejs://close";
 var config = {};
 var token = {};
 var pebbleToken;
+var hasToken = false;
 
 var configs = {
     databaseURL: "https://spoon-943a4.firebaseio.com"
@@ -16,8 +17,22 @@ var $selectTheme = $('#select-theme');
 var $checkTimeline = $('#check-timeline');
 var $msgError = $('#config-connect-error');
 var $progress = $('#progress-save');
+var $welcome = $('#message-welcome');
 
 $(document).ready(function() {
+    var tokenResult = getToken();
+    if(tokenResult !== null) {
+        token = tokenResult;
+        if(token.result === true) {
+            hasToken = true;
+            hideAuthButton();
+        } else {
+            hasToken = false;
+            showAuthButton();
+            showErrorMessage('Authorizing Foursquare failed. :( Try again.')
+        }
+    }
+    
     var pebbleTokenResult = getPebbleToken();
     if(pebbleTokenResult !== null && 
        pebbleTokenResult.pebble_token !== null) {
@@ -28,28 +43,20 @@ $(document).ready(function() {
         // Fetch data
         loadUserSettings();
     }
-    
-    var tokenResult = getToken();
-    if(tokenResult !== null) {
-        token = tokenResult;
-        if(token.result === true) {
-            hideAuthButton();
-        } else {
-            showAuthButton();
-            showErrorMessage('Authorizing Foursquare failed. :( Try again.')
-        }
-    }
 });
 
 $('#btn-save').click(function() {
     $progress.show();
-    var hasToken = false;
+    var hasNewToken = false;
     if(token != null && 
        token.result !== false && 
        token.token != null && 
        token.token.length > 0) {
+        hasNewToken = true;
+    }
+    
+    if(hasNewToken == true) {
         config.token = token.token;
-        hasToken = true;
     }
     
     var theme = $("[name='radio-theme']:checked").val();
@@ -64,9 +71,9 @@ $('#btn-save').click(function() {
 
     if(pebbleToken != null && pebbleToken.length > 0) {
         saveUserData(pebbleToken, hasToken, 
-                     parseInt(theme), 
-                     unit == 0 ? false : true, 
-                     timeline == 0 ? false : true)
+                     parseInt(config.theme),
+                     Boolean(config.unit), 
+                     Boolean(config.timeline))
                     .then(function(result) {
                         $progress.hide();
                         window.location.replace(
@@ -82,12 +89,16 @@ $('#config-connect-reauthorize').click(function() {
     showAuthButton();
 });
 
+$welcome.click(function() {
+    $welcome.hide();
+});
+
 function loadUserSettings() {
     $progress.show();
     getUserData(pebbleToken).then(function(data) {
         if(data.val() != null) {
             // Auth Button
-            if(data.val().token === true) {
+            if(data.val().token === true || hasToken) {
                 hideAuthButton();
             } else {
                 showAuthButton();
@@ -114,9 +125,15 @@ function loadUserSettings() {
                 $checkTimeline.prop('checked', false);
             }
         } else {
+            // Possibly a new user
+            $welcome.show();
             showAuthButton();
         }
         $progress.hide();
+    }, function(error) {
+        console.log("Error retrieving data");
+        $progress.hide();
+        resetAll();
     });
 }
 
@@ -134,4 +151,15 @@ function hideAuthButton() {
 function showErrorMessage(message) {
     $msgError.show();
     $msgError.html("Error saving user settings");
+}
+
+function resetAll() {
+    showAuthButton();
+
+    $tabKm.addClass('active');
+    $tabMi.removeClass('active');
+    
+    $selectTheme.val(0);
+    
+    $checkTimeline.prop('checked', false);
 }

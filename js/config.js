@@ -70,18 +70,26 @@ $('#btn-save').click(function() {
     config.timeline = timeline == 'on' ? 1 : 0;
 
     if(pebbleToken != null && pebbleToken.length > 0) {
-        saveUserData(pebbleToken, hasToken, 
+        if(hasNewToken) {
+            saveUserDataWithToken(pebbleToken,
+                     parseInt(config.theme),
+                     Boolean(config.unit), 
+                     Boolean(config.timeline),
+                     hasToken)
+                    .then(function(result) {
+                        close(config);
+                    });
+        } else {
+            saveUserData(pebbleToken,
                      parseInt(config.theme),
                      Boolean(config.unit), 
                      Boolean(config.timeline))
                     .then(function(result) {
-                        $progress.hide();
-                        window.location.replace(
-                            redirectUrl + '#' + JSON.stringify(config));
+                        close(config);
                     });
-        console.log('Pushing to Firebase');
+        }
     } else {
-        console.log("No user...");
+        console.log("No User...");
     }
 });
 
@@ -162,4 +170,10 @@ function resetAll() {
     $selectTheme.val(0);
     
     $checkTimeline.prop('checked', false);
+}
+
+function close(config) {
+    $progress.hide();
+    window.location.replace(
+        redirectUrl + '#' + JSON.stringify(config));
 }

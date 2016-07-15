@@ -114,11 +114,11 @@ function loadUserSettings() {
             
             // Distance
             if(data.val().distance == true) {
-                $tabKm.addClass('active');
-                $tabMi.removeClass('active');
-            } else {
                 $tabMi.addClass('active');
                 $tabKm.removeClass('active');
+            } else {
+                $tabKm.addClass('active');
+                $tabMi.removeClass('active');
             }
             
             // Theme

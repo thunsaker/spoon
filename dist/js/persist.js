@@ -1,12 +1,24 @@
 function getUserData(userid) {
-    return database.ref('config/' + userid).once('value');
+    return database.ref(getConfigPath(userid)).once('value');
 };
 
-function saveUserData(userid, token, theme, distance, timeline) {
-    return database.ref('config/' + userid).set({
-        token: token,
+function saveUserDataWithToken(userid, theme, distance, timeline, token) {
+    return database.ref(getConfigPath(userid)).set({
+        theme: theme,
+        distance: distance,
+        timeline: timeline,
+        token: token
+    });
+}
+
+function saveUserData(userid, theme, distance, timeline) {
+    return database.ref(getConfigPath(userid)).set({
         theme: theme,
         distance: distance,
         timeline: timeline
     });
+}
+
+function getConfigPath(userid) {
+    return 'config/' + userid;
 }

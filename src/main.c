@@ -825,8 +825,11 @@ static void window_load(Window *window) {
 
 	#ifdef PBL_SDK_3
 		#ifdef PBL_COLOR
-			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
-			menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorWhite);
+			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorDarkGray);
+			if(get_primary_color() == GColorYellow.argb)
+				menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorBlack);
+			else
+				menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorWhite);
 		#else
 			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorBlack);
 			menu_layer_set_highlight_colors(layer_menu_venues, GColorBlack, GColorWhite);

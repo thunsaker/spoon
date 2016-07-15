@@ -61,35 +61,37 @@ Pebble.addEventListener('showConfiguration',
 
 Pebble.addEventListener('webviewclosed',
 	function(e) {
-		var configuration = JSON.parse(e.response);
-		var unit = 0;
-		var theme = 0;
-		if(configuration !== null) {
-			if(configuration.unit !== null) {
-				unit = parseInt(configuration.unit);
-				localStorage.spoon_unit = unit; // 0 == km | 1 == mi
-			}
-			
-			if(configuration.token) {
-				localStorage.foursquare_token = configuration.token;
-				notifyPebbleConnected(localStorage.foursquare_token.toString());
-				isNewList = true;
-				getClosestVenues();
-			}
+		if(e.response != null && e.response.indexOf("{") > -1) {
+			var configuration = JSON.parse(e.response);
+			var unit = 0;
+			var theme = 0;
+			if(configuration !== null) {
+				if(configuration.unit !== null) {
+					unit = parseInt(configuration.unit);
+					localStorage.spoon_unit = unit; // 0 == km | 1 == mi
+				}
 
-			if(configuration.theme) {
-				theme = parseInt(configuration.theme);
-				localStorage.spoon_theme = theme;
+				if(configuration.token) {
+					localStorage.foursquare_token = configuration.token;
+					notifyPebbleConnected(localStorage.foursquare_token.toString());
+					isNewList = true;
+					getClosestVenues();
+				}
+
+				if(configuration.theme) {
+					theme = parseInt(configuration.theme);
+					localStorage.spoon_theme = theme;
+				}
+
+				if(configuration.timeline) {
+					localStorage.spoon_timeline = Boolean(configuration.timeline);
+				}
+				notifyPebbleConfiguration(theme, unit);
+				getCurrentConfig();
+			} else {
+				Pebble.sendAppMessage({'error':3});
 			}
-			
-			if(configuration.timeline) {
-				localStorage.spoon_timeline = Boolean(configuration.timeline);
-			}
-			notifyPebbleConfiguration(theme, unit);
-			getCurrentConfig();
-		} else {
-			Pebble.sendAppMessage({'error':3});
-		}	
+		}
 	}
 );
 

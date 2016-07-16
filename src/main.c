@@ -108,6 +108,8 @@ static PropertyAnimation *s_transition_text_2_animation;
 static PropertyAnimation *s_transition_circle_animation;
 static PropertyAnimation *s_transition_menu_animation;
 
+const char* locale_current;
+
 char *getErrorReason(int error_code) {
 	switch(error_code) {
 		case 0:
@@ -144,6 +146,8 @@ char *get_unit(int unit) {
 static void getListOfLocations() {
 	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
+	Tuplet lang_tuple = TupletCString(SPOON_NAME, locale_current);
+	
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	if (iter == NULL) {
@@ -153,6 +157,11 @@ static void getListOfLocations() {
 	text_layer_set_text(text_layer_primary_address, "");
 
 	dict_write_tuplet(iter, &refresh_tuple);
+	dict_write_tuplet(iter, &lang_tuple);
+	#ifdef PBL_APLITE
+		Tuplet platform_tuple = TupletInteger(SPOON_INDEX, 1);
+		dict_write_tuplet(iter, &platform_tuple);
+	#endif
 	dict_write_end(iter);
 	app_message_outbox_send();
 }
@@ -643,7 +652,14 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 	#else
 		GRect bounds = layer_get_bounds(cell_layer);
 		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-		GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+		GFont big_font;
+		
+		// If Russian switch from Roboto to Gothic which has the Cyrillic chars
+		if (strncmp(locale_current, "ru", 2) == 0) {
+			big_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+		} else {
+			big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+		}
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
 			#ifdef PBL_ROUND
@@ -785,7 +801,11 @@ static void window_load(Window *window) {
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
 	text_layer_set_text_alignment(text_layer_last_checkin_venue, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
-	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	if (strncmp(locale_current, "ru", 2) == 0) {
+		text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+	} else {
+		text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	}
 	text_layer_set_text(text_layer_last_checkin_venue, _("Venue Name"));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
 
@@ -849,7 +869,11 @@ static void window_load(Window *window) {
 	text_layer_set_text_color(text_layer_primary, GColorBlack);
 	text_layer_set_background_color(text_layer_primary, GColorClear);
 	text_layer_set_text_alignment(text_layer_primary, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
-	text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	if (strncmp(locale_current, "ru", 2) == 0) {
+		text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+	} else {
+		text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	}
 	text_layer_set_overflow_mode(text_layer_primary, GTextOverflowModeTrailingEllipsis);
 	text_layer_set_text(text_layer_primary, _("Loading..."));
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
@@ -1059,11 +1083,16 @@ static void init(void) {
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
-	app_message_open(128, 128);
+	#ifdef PBL_PLATFORM_APLITE
+		app_message_open(128, 128);
+	#else
+		app_message_open(256, 128);
+	#endif
 
 	// Init locale
-	locale_init();
-
+	locale_current = locale_init();
+	APP_LOG(APP_LOG_LEVEL_INFO, "Lang: %s", locale_current);
+	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
 	window_set_window_handlers(s_main_window, (WindowHandlers) {

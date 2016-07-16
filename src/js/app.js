@@ -1,7 +1,7 @@
 // 2016 Thomas Hunsaker @thunsaker
 
-var timeline = require('timeline');
-var moment = require('moment');
+var timeline = require('./timeline');
+var moment = require('./moment');
 
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 1000;
@@ -17,7 +17,9 @@ var sending = false;
 var mToFeet = 3.2808;
 var ftInMile = 5280;
 var lang = "en";
+var watchLang = "en";
 var currentConfig = {};
+var littleMessages = false;
 
 var getCurrentConfig = function() {
 	currentConfig.token = 
@@ -43,7 +45,7 @@ var createPin = function(id, venue, address) {
 };
 
 var appendLangToUrl = function(url) {
-	return url += "&locale=" + lang;
+	return url += "&locale=" + watchLang;
 };
 
 Pebble.addEventListener('ready',
@@ -55,7 +57,8 @@ Pebble.addEventListener('ready',
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
- 		Pebble.openURL('https://thunsaker.github.io/spoon/config');
+		var token = Pebble.getAccountToken();
+  		Pebble.openURL('https://spoon.thomashunsaker.com/config?pebble_token=' + encodeURIComponent(token));
 	});
 
 Pebble.addEventListener('webviewclosed',
@@ -116,9 +119,12 @@ var success = function(position) {
 
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
-	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
-//  	console.log("requestUrl: " + requestUrl);
+ 	var tempLatLng = '55.7520263,37.6153107';
+ 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' + tempLatLng + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
+//  	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' + position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 	requestUrl = appendLangToUrl(requestUrl);
+// 	console.log("requestUrl: " + requestUrl);
+	
 	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
 		if (req.readyState == 4) {
@@ -130,8 +136,19 @@ function fetchClosestVenues(token, position) {
 					venues.forEach(function (element, index, array) {
 						var offsetIndex = index;
 						var venueId = element.id.replace('\'','');
-						var venueName = element.name.length >= 60 ? element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
-						var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20).trim() : element.location.address : '';
+						var maxName = 30;
+						var maxAddress = 30;
+						if(littleMessages) {
+							maxName = 20;
+							maxAddress = 10;
+						}
+						
+						var venueName = element.name.length >= maxName ? 
+							element.name.substring(0,maxName-1).trim().replace('\'','') : 
+							element.name.replace('\'','');
+						var venueAddress = element.location.address ? 
+							element.location.address.length > maxAddress ? element.location.address.substring(0,maxAddress-1).trim() : 
+							element.location.address : '';
 						var venueDistance = "";
 						var venueDistanceUnit = 0;
 						if(element.location.distance) {
@@ -147,13 +164,13 @@ function fetchClosestVenues(token, position) {
 							}
 						}
 
+						// TODO: Consider splitting the message up into 2 parts, name/address?
 						if(isNewList) {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 							isNewList = false;
 						} else {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 						}
-
 						// Send them in clusters of 5
 // 						if(index % 5 == 1 || index == max_venues/2 || index == max_venues)
 							sendAppMessage();
@@ -255,7 +272,10 @@ function sendAppMessage() {
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-//  		console.log('Trying to send a message: ' + currentAppMessage.message.name);
+//  		console.log('Trying to send a message');
+// 			console.log('Name: ' + currentAppMessage.message.name);
+// 			console.log('Address: ' + currentAppMessage.message.address);
+// 			console.log('Distance: ' + currentAppMessage.message.distance);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -365,6 +385,13 @@ Pebble.addEventListener('appmessage',
 		} else if (e.payload.refresh) {
 // 			console.log('received appmessage: ' + e.payload);
 			max_venues = e.payload.refresh + 1;
+			if(e.payload.name !== null && e.payload.name.length > 0) {
+				if(e.payload.name.length > 2)
+					watchLang = e.payload.name.substring(0,2);
+			}
+			
+			if(e.payload.index == 1)
+				littleMessages = true;
 			getClosestVenues();
 		}
 	});

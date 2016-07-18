@@ -640,9 +640,11 @@ static int16_t menu_get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *c
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) { }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-	char addressString[30];
+	char addressString[75];
 	snprintf(addressString, sizeof(addressString), 
-			 "%s %s - %s", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit), venues[cell_index->row].address);
+			 "%s %s - ", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit));
+	size_t len = strlen(addressString);
+ 	strncat(addressString, venues[cell_index->row].address, 99 - len);
 	#ifdef PBL_PLATFORM_APLITE
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			menu_cell_basic_draw(ctx, cell_layer, _("Foursquare"), _("Powered"), image_cog);
@@ -654,7 +656,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 		GFont big_font;
 		
-		// If Russian switch from Roboto to Gothic which has the Cyrillic chars
+		// If Russian switch from Roboto to Gothic which has some of the Cyrillic char set
 		if (strncmp(locale_current, "ru", 2) == 0) {
 			big_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
 		} else {
@@ -1007,7 +1009,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			getListOfLocations();
 		}
 	} else if(text_tuple_token && !text_tuple_latlng) {
-// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Token: %s", text_tuple_token->value->cstring);
 		text_layer_set_text(text_layer_primary, _("Connected to Foursquare!"));
 
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
@@ -1052,7 +1053,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(SCREEN_WIDTH-40,50));
 				text_layer_set_text(text_layer_primary, venues[0].name);
-				static char addressString[30];
+				static char addressString[75];
 				#ifdef PBL_ROUND
 					text_layer_set_text(text_layer_primary_address, venues[0].address);
 					snprintf(addressString, sizeof(addressString), 
@@ -1097,9 +1098,7 @@ static void init(void) {
 		app_message_open(256, 128);
 	#endif
 
-	// Init locale
 	locale_current = locale_init();
-	APP_LOG(APP_LOG_LEVEL_INFO, "Lang: %s", locale_current);
 	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);

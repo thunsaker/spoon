@@ -133,12 +133,12 @@ var success = function(position) {
 
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
-	// Test venue and api for Russian venues
- 	// 	var tempLatLng = '55.7520263,37.6153107';
- 	// 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' + tempLatLng + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
-	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
+	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + 
+		token + '&v=' + api_date + 
+		'&ll=' + position.coords.latitude + ',' + position.coords.longitude + 
+		'&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 	requestUrl = appendLangToUrl(requestUrl);
-	// 	console.log("requestUrl: " + requestUrl);
+// 	console.log("requestUrl: " + requestUrl);
 
 	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
@@ -285,12 +285,16 @@ function sendAppMessage() {
 		var currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
+		
+		// DEBUG: For debugging venue specific issues
+// 		console.log('----------------------');
+// 		console.log('Name: ' + currentAppMessage.message.name);
+// 		console.log('----------------------');
+// 		console.log('Distance: ' + currentAppMessage.message.distance);
+// 		console.log('Address: ' + currentAppMessage.message.address);
+// 		console.log('----------------------\n\n');
 
-		if (currentAppMessage.numTries < maxAppMessageTries) {
-//  		console.log('Trying to send a message');
-// 			console.log('Name: ' + currentAppMessage.message.name);
-// 			console.log('Address: ' + currentAppMessage.message.address);
-// 			console.log('Distance: ' + currentAppMessage.message.distance);
+		if (currentAppMessage.numTries < maxAppMessageTries) {		
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {

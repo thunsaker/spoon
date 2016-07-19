@@ -825,8 +825,11 @@ static void window_load(Window *window) {
 
 	#ifdef PBL_SDK_3
 		#ifdef PBL_COLOR
-			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorLightGray);
-			menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorWhite);
+			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorDarkGray);
+			if(get_primary_color() == GColorYellow.argb)
+				menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorBlack);
+			else
+				menu_layer_set_highlight_colors(layer_menu_venues, (GColor)get_primary_color(), GColorWhite);
 		#else
 			menu_layer_set_normal_colors(layer_menu_venues, GColorWhite, GColorBlack);
 			menu_layer_set_highlight_colors(layer_menu_venues, GColorBlack, GColorWhite);
@@ -962,14 +965,19 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 // 	APP_LOG(APP_LOG_LEVEL_DEBUG, "In received");
 
 	if(text_tuple_error) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "Error received from js");
 		text_layer_set_text(text_layer_primary, getErrorReason(text_tuple_error->value->int16));
-	} else if(text_tuple_config) {
+	} else if(text_tuple_config && text_tuple_distance_unit) {
 		#ifdef PBL_COLOR
 			int config = text_tuple_config->value->int16;
 			config_init(config);
 			persist_write_int(KEY_THEME, config);
 			setup_theme_colors(config);
 		#endif
+		
+		int unit = text_tuple_distance_unit->value->int16;
+		persist_write_int(KEY_UNIT, unit);
+		config_set_unit(unit);	
 	} else if(text_tuple_ready) {
 		if(!no_foursquare) {
 			getListOfLocations();

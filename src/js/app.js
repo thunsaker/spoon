@@ -1,7 +1,7 @@
 // 2016 Thomas Hunsaker @thunsaker
 
-var timeline = require('timeline');
-var moment = require('moment');
+var timeline = require('./timeline');
+var moment = require('./moment');
 
 var maxAppMessageTries = 3;
 var appMessageRetryTimeout = 1000;
@@ -21,7 +21,7 @@ var currentConfig = {};
 
 var getCurrentConfig = function() {
 	currentConfig.token = 
-		localStorage.foursquare_token !== null && localStorage.foursquare_token.length > 0 ? 
+		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ? 
 		"[TOKEN_NOT_SHOWN]" : "";
 	currentConfig.theme = parseInt(localStorage.spoon_theme);
 	currentConfig.unit = localStorage.spoon_unit;
@@ -55,29 +55,43 @@ Pebble.addEventListener('ready',
 
 Pebble.addEventListener('showConfiguration',
 	function(e) {
- 		Pebble.openURL('https://thunsaker.github.io/spoon/config');
+		var token = Pebble.getWatchToken();
+  		Pebble.openURL('https://spoon.thomashunsaker.com/config?pebble_token=' + encodeURIComponent(token));
 	});
 
 Pebble.addEventListener('webviewclosed',
 	function(e) {
-		var configuration = JSON.parse(e.response);
-		if(configuration.token.result) {
- 			localStorage.foursquare_token = configuration.token.token;
-			notifyPebbleConnected(localStorage.foursquare_token.toString());
-			isNewList = true;
-			if(configuration.unit !== null)
-				localStorage.spoon_unit = configuration.unit; // 0 == km | 1 == mi
-			getClosestVenues();
-		} else {
-			Pebble.sendAppMessage({'error':3});
+		if(e.response != null && e.response.indexOf("{") > -1) {
+			var configuration = JSON.parse(e.response);
+			var unit = 0;
+			var theme = 0;
+			if(configuration !== null) {
+				if(configuration.unit !== null) {
+					unit = parseInt(configuration.unit);
+					localStorage.spoon_unit = unit; // 0 == km | 1 == mi
+				}
+
+				if(configuration.token) {
+					localStorage.foursquare_token = configuration.token;
+					notifyPebbleConnected(localStorage.foursquare_token.toString());
+					isNewList = true;
+					getClosestVenues();
+				}
+
+				if(configuration.theme) {
+					theme = parseInt(configuration.theme);
+					localStorage.spoon_theme = theme;
+				}
+
+				if(configuration.timeline) {
+					localStorage.spoon_timeline = Boolean(configuration.timeline);
+				}
+				notifyPebbleConfiguration(theme, unit);
+				getCurrentConfig();
+			} else {
+				Pebble.sendAppMessage({'error':3});
+			}
 		}
-		
-		localStorage.spoon_unit = configuration.unit;
-		var theme = parseInt(configuration.theme);
-		localStorage.spoon_theme = theme;
-		notifyPebbleConfiguration(theme);
-		localStorage.spoon_timeline = parseInt(configuration.timeline);
-		getCurrentConfig();
 	}
 );
 
@@ -87,8 +101,9 @@ function notifyPebbleConnected(token) {
 // 	console.log("Sent the token: " + token);
 }
 
-function notifyPebbleConfiguration(theme) {
-	appMessageQueue.push({'message': {'config': theme }});
+function notifyPebbleConfiguration(theme, unit) {
+	if(theme !== null && unit !== null)
+		appMessageQueue.push({'message': {'config': theme, 'unit': unit }});
 	sendAppMessage();
 }
 
@@ -117,7 +132,7 @@ var success = function(position) {
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
-//  	console.log("requestUrl: " + requestUrl);
+//  console.log("requestUrl: " + requestUrl);
 	requestUrl = appendLangToUrl(requestUrl);
 	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
@@ -324,7 +339,7 @@ function attemptCheckin(id, name, broadcast) {
 										var pin = createPin(checkin.id,venue.name,venue.location.address);
 // 										console.log('Inserting pin now: ' + JSON.stringify(pin));
 										timeline.insertUserPin(pin, function(responseText) { 
-											console.log('User Pin Result: ' + responseText);
+// 											console.log('User Pin Result: ' + responseText);
 										});
 									}
 								}

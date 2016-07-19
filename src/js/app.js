@@ -362,11 +362,7 @@ function attemptCheckin(id, name, broadcast) {
 									if(currentConfig.timeline === 1) {
 										var pin = createPin(checkin.id,venue.name,venue.location.address);
 // 										console.log('Inserting pin now: ' + JSON.stringify(pin));
-<<<<<<< HEAD
 										timeline.insertUserPin(pin, function(responseText) {
-=======
-										timeline.insertUserPin(pin, function(responseText) {
->>>>>>> master
 // 											console.log('User Pin Result: ' + responseText);
 										});
 									}

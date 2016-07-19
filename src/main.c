@@ -12,7 +12,6 @@
 #include "common.h"
 #include "config.h"
 #include "paths.h"
-// #include <localize.h>
 #include <pebble-localize/pebble-localize.h>
 
 #define BOX_HEIGHT 84

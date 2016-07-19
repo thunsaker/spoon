@@ -108,6 +108,8 @@ static PropertyAnimation *s_transition_text_2_animation;
 static PropertyAnimation *s_transition_circle_animation;
 static PropertyAnimation *s_transition_menu_animation;
 
+const char* locale_current;
+
 char *getErrorReason(int error_code) {
 	switch(error_code) {
 		case 0:
@@ -144,6 +146,8 @@ char *get_unit(int unit) {
 static void getListOfLocations() {
 	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
+	Tuplet lang_tuple = TupletCString(SPOON_NAME, locale_current);
+	
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	if (iter == NULL) {
@@ -153,6 +157,11 @@ static void getListOfLocations() {
 	text_layer_set_text(text_layer_primary_address, "");
 
 	dict_write_tuplet(iter, &refresh_tuple);
+	dict_write_tuplet(iter, &lang_tuple);
+	#ifdef PBL_APLITE
+		Tuplet platform_tuple = TupletInteger(SPOON_INDEX, 1);
+		dict_write_tuplet(iter, &platform_tuple);
+	#endif
 	dict_write_end(iter);
 	app_message_outbox_send();
 }
@@ -631,9 +640,11 @@ static int16_t menu_get_cell_height_callback(MenuLayer *menu_layer, MenuIndex *c
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) { }
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
-	char addressString[30];
+	char addressString[75];
 	snprintf(addressString, sizeof(addressString), 
-			 "%s %s - %s", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit), venues[cell_index->row].address);
+			 "%s %s - ", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit));
+	size_t len = strlen(addressString);
+ 	strncat(addressString, venues[cell_index->row].address, 99 - len);
 	#ifdef PBL_PLATFORM_APLITE
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			menu_cell_basic_draw(ctx, cell_layer, _("Foursquare"), _("Powered"), image_cog);
@@ -643,7 +654,14 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 	#else
 		GRect bounds = layer_get_bounds(cell_layer);
 		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
-		GFont big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+		GFont big_font;
+		
+		// If Russian switch from Roboto to Gothic which has some of the Cyrillic char set
+		if (strncmp(locale_current, "ru", 2) == 0) {
+			big_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
+		} else {
+			big_font = fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21);
+		}
 		if(cell_index->row == NUM_MENU_ITEMS - 1) {
 			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
 			#ifdef PBL_ROUND
@@ -785,7 +803,11 @@ static void window_load(Window *window) {
 	text_layer_set_text_color(text_layer_last_checkin_venue, GColorBlack);
 	text_layer_set_background_color(text_layer_last_checkin_venue, GColorClear);
 	text_layer_set_text_alignment(text_layer_last_checkin_venue, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
-	text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	if (strncmp(locale_current, "ru", 2) == 0) {
+		text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+	} else {
+		text_layer_set_font(text_layer_last_checkin_venue, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	}
 	text_layer_set_text(text_layer_last_checkin_venue, _("Venue Name"));
 	layer_add_child(layer_last_checkin, text_layer_get_layer(text_layer_last_checkin_venue));
 
@@ -852,7 +874,11 @@ static void window_load(Window *window) {
 	text_layer_set_text_color(text_layer_primary, GColorBlack);
 	text_layer_set_background_color(text_layer_primary, GColorClear);
 	text_layer_set_text_alignment(text_layer_primary, PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft));
-	text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	if (strncmp(locale_current, "ru", 2) == 0) {
+		text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+	} else {
+		text_layer_set_font(text_layer_primary, fonts_get_system_font(FONT_KEY_ROBOTO_CONDENSED_21));
+	}
 	text_layer_set_overflow_mode(text_layer_primary, GTextOverflowModeTrailingEllipsis);
 	text_layer_set_text(text_layer_primary, _("Loading..."));
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary));
@@ -983,7 +1009,6 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			getListOfLocations();
 		}
 	} else if(text_tuple_token && !text_tuple_latlng) {
-// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Token: %s", text_tuple_token->value->cstring);
 		text_layer_set_text(text_layer_primary, _("Connected to Foursquare!"));
 
 		persist_write_string(KEY_TOKEN, text_tuple_token->value->cstring);
@@ -1028,7 +1053,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			if(venue.index == 0) {
 				text_layer_set_size(text_layer_primary, GSize(SCREEN_WIDTH-40,50));
 				text_layer_set_text(text_layer_primary, venues[0].name);
-				static char addressString[30];
+				static char addressString[75];
 				#ifdef PBL_ROUND
 					text_layer_set_text(text_layer_primary_address, venues[0].address);
 					snprintf(addressString, sizeof(addressString), 
@@ -1067,11 +1092,14 @@ static void init(void) {
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
-	app_message_open(128, 128);
+	#ifdef PBL_PLATFORM_APLITE
+		app_message_open(128, 128);
+	#else
+		app_message_open(256, 128);
+	#endif
 
-	// Init locale
-	locale_init();
-
+	locale_current = locale_init();
+	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
 	window_set_window_handlers(s_main_window, (WindowHandlers) {

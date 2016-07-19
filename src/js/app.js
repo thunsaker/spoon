@@ -17,11 +17,18 @@ var sending = false;
 var mToFeet = 3.2808;
 var ftInMile = 5280;
 var lang = "en";
+var watchLang = "en";
 var currentConfig = {};
+var littleMessages = false;
 
 var getCurrentConfig = function() {
-	currentConfig.token = 
-		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ? 
+<<<<<<< HEAD
+	currentConfig.token =
+		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ?
+=======
+	currentConfig.token =
+		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ?
+>>>>>>> master
 		"[TOKEN_NOT_SHOWN]" : "";
 	currentConfig.theme = parseInt(localStorage.spoon_theme);
 	currentConfig.unit = localStorage.spoon_unit;
@@ -43,7 +50,7 @@ var createPin = function(id, venue, address) {
 };
 
 var appendLangToUrl = function(url) {
-	return url += "&locale=" + lang;
+	return url += "&locale=" + watchLang;
 };
 
 Pebble.addEventListener('ready',
@@ -123,7 +130,7 @@ var error = function(e) {
 var success = function(position) {
 	var userToken = localStorage.foursquare_token !== null ?
 		localStorage.foursquare_token.toString() : null;
-	if(userToken) {	
+	if(userToken) {
 		fetchMostRecentCheckin(userToken);
 		fetchClosestVenues(userToken, position);
 	}
@@ -131,9 +138,13 @@ var success = function(position) {
 
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
-	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + token + '&v=' + api_date + '&ll=' +  position.coords.latitude + ',' + position.coords.longitude + '&limit=' + max_venues + '&radius=' + max_radius + api_mode;
-//  console.log("requestUrl: " + requestUrl);
+	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' +
+		token + '&v=' + api_date +
+		'&ll=' + position.coords.latitude + ',' + position.coords.longitude +
+		'&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 	requestUrl = appendLangToUrl(requestUrl);
+// 	console.log("requestUrl: " + requestUrl);
+
 	req.open('GET', requestUrl, true);
 	req.onload = function(e) {
 		if (req.readyState == 4) {
@@ -145,8 +156,19 @@ function fetchClosestVenues(token, position) {
 					venues.forEach(function (element, index, array) {
 						var offsetIndex = index;
 						var venueId = element.id.replace('\'','');
-						var venueName = element.name.length >= 60 ? element.name.substring(0,59).trim().replace('\'','') : element.name.replace('\'','');
-						var venueAddress = element.location.address ? element.location.address.length > 20 ? element.location.address.substring(0,20).trim() : element.location.address : '';
+						var maxName = 30;
+						var maxAddress = 30;
+						if(littleMessages) {
+							maxName = 20;
+							maxAddress = 10;
+						}
+
+						var venueName = element.name.length >= maxName ?
+							element.name.substring(0,maxName-1).trim().replace('\'','') :
+							element.name.replace('\'','');
+						var venueAddress = element.location.address ?
+							element.location.address.length > maxAddress ? element.location.address.substring(0,maxAddress-1).trim() :
+							element.location.address : '';
 						var venueDistance = "";
 						var venueDistanceUnit = 0;
 						if(element.location.distance) {
@@ -162,13 +184,13 @@ function fetchClosestVenues(token, position) {
 							}
 						}
 
+						// TODO: Consider splitting the message up into 2 parts, name/address?
 						if(isNewList) {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 							isNewList = false;
 						} else {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 						}
-
 						// Send them in clusters of 5
 // 						if(index % 5 == 1 || index == max_venues/2 || index == max_venues)
 							sendAppMessage();
@@ -211,8 +233,8 @@ function fetchMostRecentCheckin(token) {
 					var checkinItems = response.response.checkins.items;
 					checkinItems.forEach(function (element, index, array) {
 						var venueId = element.venue.id.replace('\'','');
-						var venueName = element.venue.name.length > 45 ? 
-							element.venue.name.substring(0,45).replace('\'','') 
+						var venueName = element.venue.name.length > 45 ?
+							element.venue.name.substring(0,45).replace('\'','')
 							: element.venue.name.replace('\'','');
 						var checkinString = "";
 						var checkinDate = new Date(element.createdAt*1000);
@@ -220,8 +242,8 @@ function fetchMostRecentCheckin(token) {
 						minutes = minutes < 10 ? "0" + minutes : minutes;
 						// Show relative time if the last checkin was less than 1 day ago
 						if(Date.now() - checkinDate.getTime() > 86400000) {
-							checkinString = checkinDate !== null ? 
- 								checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString() 
+							checkinString = checkinDate !== null ?
+ 								checkinDate.getHours() + ":" + minutes + " " + checkinDate.toDateString()
 								: "";
 						} else {
 							moment.locale(lang);
@@ -255,7 +277,7 @@ function getClosestVenues() {
 	} else {
 		console.log('no location support');
 		error('not supported');
-	}		
+	}
 }
 
 function sendAppMessage() {
@@ -263,14 +285,21 @@ function sendAppMessage() {
 		return;
 	else
 		sending = true;
-	
+
 	if (appMessageQueue.length > 0) {
 		var currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
 
+		// DEBUG: For debugging venue specific issues
+// 		console.log('----------------------');
+// 		console.log('Name: ' + currentAppMessage.message.name);
+// 		console.log('----------------------');
+// 		console.log('Distance: ' + currentAppMessage.message.distance);
+// 		console.log('Address: ' + currentAppMessage.message.address);
+// 		console.log('----------------------\n\n');
+
 		if (currentAppMessage.numTries < maxAppMessageTries) {
-//  		console.log('Trying to send a message: ' + currentAppMessage.message.name);
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -316,7 +345,7 @@ function attemptCheckin(id, name, broadcast) {
 						broadcastType = 'twitter,facebook';
 						break;
 				}
-					
+
 				if(broadcast > 0) {
 					checkinRequestUrl += '&broadcast=' + broadcastType;
 				}
@@ -332,13 +361,17 @@ function attemptCheckin(id, name, broadcast) {
 								if(response) {
 									var checkin = response.response.checkin;
 									var venue = checkin.venue;
-									
+
 									// TODO: Maybe show the user a popular tip after checkin?
 									notifyPebbleCheckinOutcome(true, venue.name, '', -1);
 									if(currentConfig.timeline === 1) {
 										var pin = createPin(checkin.id,venue.name,venue.location.address);
 // 										console.log('Inserting pin now: ' + JSON.stringify(pin));
-										timeline.insertUserPin(pin, function(responseText) { 
+<<<<<<< HEAD
+										timeline.insertUserPin(pin, function(responseText) {
+=======
+										timeline.insertUserPin(pin, function(responseText) {
+>>>>>>> master
 // 											console.log('User Pin Result: ' + responseText);
 										});
 									}
@@ -367,7 +400,7 @@ function attemptCheckin(id, name, broadcast) {
 		} else {
 			console.log('no location support');
 			error('not supported');
-		}	
+		}
 	}
 }
 
@@ -380,6 +413,13 @@ Pebble.addEventListener('appmessage',
 		} else if (e.payload.refresh) {
 // 			console.log('received appmessage: ' + e.payload);
 			max_venues = e.payload.refresh + 1;
+			if(e.payload.name !== null && e.payload.name.length > 0) {
+				if(e.payload.name.length > 2)
+					watchLang = e.payload.name.substring(0,2);
+			}
+
+			if(e.payload.index == 1)
+				littleMessages = true;
 			getClosestVenues();
 		}
 	});

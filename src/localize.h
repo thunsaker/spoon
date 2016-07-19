@@ -1,8 +1,0 @@
-#pragma once
-#include "hash.h"
-
-#define _(str) locale_str(HASH_DJB2(str))
-
-const char* locale_init(void);
-
-char *locale_str(int hashval);

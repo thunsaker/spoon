@@ -6,7 +6,8 @@
 #include "checkin.h"
 #include "colors.h"
 #include "share_menu.h"
-#include <localize.h>
+// #include <localize.h>
+#include <pebble-localize/pebble-localize.h>
 	
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ITEMS 3

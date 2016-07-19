@@ -12,7 +12,8 @@
 #include "common.h"
 #include "config.h"
 #include "paths.h"
-#include <localize.h>
+// #include <localize.h>
+#include <pebble-localize/pebble-localize.h>
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
@@ -110,7 +111,7 @@ static PropertyAnimation *s_transition_menu_animation;
 
 const char* locale_current;
 
-char *getErrorReason(int error_code) {
+const char *getErrorReason(int error_code) {
 	switch(error_code) {
 		case 0:
 			return _("No internet connection detected.");
@@ -130,7 +131,7 @@ char *getErrorReason(int error_code) {
 	};
 }
 
-char *get_unit(int unit) {
+const char *get_unit(int unit) {
 	switch(unit) {
 		case 1:
 			return _("km");
@@ -1098,7 +1099,20 @@ static void init(void) {
 		app_message_open(256, 128);
 	#endif
 
-	locale_current = locale_init();
+	// Detect system locale
+    locale_current = i18n_get_system_locale();
+
+    if (strncmp(locale_current, "fr", 2) == 0) {
+        localize_init(RESOURCE_ID_LOCALE_FRENCH);
+    } else if (strncmp(locale_current, "es", 2) == 0) {
+        localize_init(RESOURCE_ID_LOCALE_SPANISH);
+    } else if (strncmp(locale_current, "de", 2) == 0) {
+        localize_init(RESOURCE_ID_LOCALE_GERMAN);
+    } else {
+		localize_init(RESOURCE_ID_LOCALE_ENGLISH);
+	}
+	
+	localize_set_cache_size(2);
 	
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
@@ -1131,6 +1145,8 @@ static void deinit(void) {
 	window_destroy_safe(s_main_window);
 	checkin_deinit();
 	checkin_menu_deinit();
+	
+	localize_deinit();
 
 	#ifdef PBL_SDK_2
 		property_animation_destroy(s_drop_current_animation);

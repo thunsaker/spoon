@@ -3,7 +3,8 @@
 #pragma once
 	
 #include <pebble.h>
-#include <localize.h>
+// #include <localize.h>
+#include <pebble-localize/pebble-localize.h>
 
 typedef struct {
         char id[25];

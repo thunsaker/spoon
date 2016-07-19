@@ -22,8 +22,13 @@ var currentConfig = {};
 var littleMessages = false;
 
 var getCurrentConfig = function() {
+<<<<<<< HEAD
 	currentConfig.token =
 		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ?
+=======
+	currentConfig.token =
+		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ?
+>>>>>>> master
 		"[TOKEN_NOT_SHOWN]" : "";
 	currentConfig.theme = parseInt(localStorage.spoon_theme);
 	currentConfig.unit = localStorage.spoon_unit;
@@ -133,9 +138,9 @@ var success = function(position) {
 
 function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
-	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' + 
-		token + '&v=' + api_date + 
-		'&ll=' + position.coords.latitude + ',' + position.coords.longitude + 
+	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' +
+		token + '&v=' + api_date +
+		'&ll=' + position.coords.latitude + ',' + position.coords.longitude +
 		'&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 	requestUrl = appendLangToUrl(requestUrl);
 // 	console.log("requestUrl: " + requestUrl);
@@ -285,7 +290,7 @@ function sendAppMessage() {
 		var currentAppMessage = appMessageQueue[0];
 		currentAppMessage.numTries = currentAppMessage.numTries || 0;
 		currentAppMessage.transactionId = currentAppMessage.transactionId || -1;
-		
+
 		// DEBUG: For debugging venue specific issues
 // 		console.log('----------------------');
 // 		console.log('Name: ' + currentAppMessage.message.name);
@@ -294,7 +299,7 @@ function sendAppMessage() {
 // 		console.log('Address: ' + currentAppMessage.message.address);
 // 		console.log('----------------------\n\n');
 
-		if (currentAppMessage.numTries < maxAppMessageTries) {		
+		if (currentAppMessage.numTries < maxAppMessageTries) {
 			Pebble.sendAppMessage(
 				currentAppMessage.message,
 				function(e) {
@@ -362,7 +367,11 @@ function attemptCheckin(id, name, broadcast) {
 									if(currentConfig.timeline === 1) {
 										var pin = createPin(checkin.id,venue.name,venue.location.address);
 // 										console.log('Inserting pin now: ' + JSON.stringify(pin));
+<<<<<<< HEAD
 										timeline.insertUserPin(pin, function(responseText) {
+=======
+										timeline.insertUserPin(pin, function(responseText) {
+>>>>>>> master
 // 											console.log('User Pin Result: ' + responseText);
 										});
 									}

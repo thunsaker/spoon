@@ -22,13 +22,8 @@ var currentConfig = {};
 var littleMessages = false;
 
 var getCurrentConfig = function() {
-<<<<<<< HEAD
 	currentConfig.token =
 		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ?
-=======
-	currentConfig.token =
-		localStorage.foursquare_token != null && localStorage.foursquare_token.length > 0 ?
->>>>>>> master
 		"[TOKEN_NOT_SHOWN]" : "";
 	currentConfig.theme = parseInt(localStorage.spoon_theme);
 	currentConfig.unit = localStorage.spoon_unit;

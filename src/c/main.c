@@ -1,17 +1,17 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
-#include "libs/pebble-assist.h"
+#include "src/c/libs/pebble-assist.h"
 #ifdef PBL_COLOR
-	#include "libs/dithered_rects.h"
-	#include "colors.h"
+	#include "src/c/libs/dithered_rects.h"
+	#include "src/c/colors.h"
 #endif
-#include "checkin_menu.h"
-#include "checkin.h"
-#include "libs/math-utils.h"
-#include "common.h"
-#include "config.h"
-#include "paths.h"
+#include "src/c/checkin_menu.h"
+#include "src/c/checkin.h"
+#include "src/c/libs/math-utils.h"
+#include "src/c/common.h"
+#include "src/c/config.h"
+#include "src/c/paths.h"
 #include <pebble-localize/pebble-localize.h>
 
 #define BOX_HEIGHT 84

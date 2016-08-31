@@ -36,6 +36,7 @@
                     "file": "images/spoon_2_menu_icon.png",
                     "menuIcon": true,
                     "name": "IMAGE_MENU",
+                    "targetPlatforms": null,
                     "type": "bitmap"
                 },
                 {
@@ -83,7 +84,8 @@
         "sdkVersion": "3",
         "targetPlatforms": [
             "basalt",
-            "chalk"
+            "chalk",
+            "diorite"
         ],
         "uuid": "1cceab0a-8dc1-4641-b7b6-5ea9c827dd66",
         "watchapp": {

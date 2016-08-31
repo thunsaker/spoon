@@ -33,10 +33,14 @@
         "resources": {
             "media": [
                 {
-                    "file": "images/spoon_2_menu_icon.png",
+                    "file": "images/spoon_menu_icon.png",
                     "menuIcon": true,
                     "name": "IMAGE_MENU",
-                    "targetPlatforms": null,
+                    "targetPlatforms": [
+                        "basalt",
+                        "chalk",
+                        "diorite"
+                    ],
                     "type": "bitmap"
                 },
                 {
@@ -57,6 +61,11 @@
                 {
                     "file": "images/check_white.png",
                     "name": "IMAGE_CHECK_ON",
+                    "targetPlatforms": [
+                        "basalt",
+                        "chalk",
+                        "diorite"
+                    ],
                     "type": "bitmap"
                 },
                 {

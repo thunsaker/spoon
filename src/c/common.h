@@ -43,6 +43,7 @@ enum {
 #define KEY_TOKEN 10
 #define KEY_THEME 20
 #define KEY_UNIT 30
+#define DAY_IN_SECONDS 86400
 	
 #ifdef PBL_SDK_3
 	#define STATUS_BAR_OFFSET 0

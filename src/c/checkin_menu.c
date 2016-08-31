@@ -1,12 +1,12 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
-#include "libs/pebble-assist.h"
-#include "checkin_menu.h"
-#include "checkin.h"
-#include "colors.h"
-#include "share_menu.h"
-#include <localize.h>
+#include "src/c/libs/pebble-assist.h"
+#include "src/c/checkin_menu.h"
+#include "src/c/checkin.h"
+#include "src/c/colors.h"
+#include "src/c/share_menu.h"
+#include <pebble-localize/pebble-localize.h>
 	
 #define NUM_MENU_SECTIONS 1
 #define NUM_MENU_ITEMS 3

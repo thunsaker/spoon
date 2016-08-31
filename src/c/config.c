@@ -1,8 +1,8 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
-#include "config.h"
-#include "common.h"
+#include "src/c/config.h"
+#include "src/c/common.h"
 
 static int theme = 0;
 static int unit = 0;

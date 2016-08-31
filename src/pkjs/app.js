@@ -135,7 +135,7 @@ function fetchClosestVenues(token, position) {
 	var req = new XMLHttpRequest();
 	var requestUrl = 'https://api.foursquare.com/v2/venues/search?oauth_token=' +
 		token + '&v=' + api_date +
-		'&ll=' + position.coords.latitude + ',' + position.coords.longitude +
+ 		'&ll=' + position.coords.latitude + ',' + position.coords.longitude +
 		'&limit=' + max_venues + '&radius=' + max_radius + api_mode;
 	requestUrl = appendLangToUrl(requestUrl);
 // 	console.log("requestUrl: " + requestUrl);

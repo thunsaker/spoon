@@ -1,7 +1,7 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
-#include "colors.h"
+#include "src/c/colors.h"
 
 static uint8_t primary_color;
 static uint8_t accent_color;

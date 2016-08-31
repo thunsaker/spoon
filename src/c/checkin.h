@@ -1,7 +1,7 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 #pragma once
-	
+
 #include <pebble.h>
 
 #define CHECKIN_COUNTDOWN_BAR_SIZE GSize(144,1)

@@ -1,11 +1,11 @@
 // 2016 Thomas Hunsaker @thunsaker
 
 #include <pebble.h>
-#include "checkin.h"
-#include "colors.h"
-#include "common.h"
-#include "libs/pebble-assist.h"
-#include "paths.h"
+#include "src/c/checkin.h"
+#include "src/c/colors.h"
+#include "src/c/common.h"
+#include "src/c/libs/pebble-assist.h"
+#include "src/c/paths.h"
 
 static Window *s_main_window;
 #ifdef PBL_SDK_3

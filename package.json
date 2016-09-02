@@ -83,12 +83,12 @@
                 {
                     "name":"ICON_SPOON",
                     "id":1,
-                    "glance":"ICON_SPOON"
+                    "glance":"IMAGE_MENU"
                 },
                 {
                     "name":"ICON_CHECK",
                     "id":2,
-                    "glance":"ICON_CHECK"
+                    "glance":"IMAGE_CHECK_ON"
                 }
             ]
         },

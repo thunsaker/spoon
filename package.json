@@ -36,11 +36,6 @@
                     "file": "images/spoon_menu_icon.png",
                     "menuIcon": true,
                     "name": "IMAGE_MENU",
-                    "targetPlatforms": [
-                        "basalt",
-                        "chalk",
-                        "diorite"
-                    ],
                     "type": "bitmap"
                 },
                 {
@@ -61,11 +56,6 @@
                 {
                     "file": "images/check_white.png",
                     "name": "IMAGE_CHECK_ON",
-                    "targetPlatforms": [
-                        "basalt",
-                        "chalk",
-                        "diorite"
-                    ],
                     "type": "bitmap"
                 },
                 {
@@ -87,6 +77,18 @@
                     "file": "data/locale_english.bin",
                     "name": "LOCALE_ENGLISH",
                     "type": "raw"
+                }
+            ],
+            "publishedMedia": [
+                {
+                    "name":"ICON_SPOON",
+                    "id":1,
+                    "glance":"ICON_SPOON"
+                },
+                {
+                    "name":"ICON_CHECK",
+                    "id":2,
+                    "glance":"ICON_CHECK"
                 }
             ]
         },

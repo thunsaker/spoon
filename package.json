@@ -3,6 +3,8 @@
     "dependencies": {
         "pebble-localize": "^0.1.0"
     },
+    "license":"MIT",
+    "repository":"https://github.com/thunsaker/spoon",
     "keywords": [],
     "name": "spoon",
     "pebble": {

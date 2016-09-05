@@ -147,7 +147,7 @@ static void getListOfLocations() {
 	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
 	Tuplet lang_tuple = TupletCString(SPOON_NAME, locale_current);
-	
+
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	if (iter == NULL) {
@@ -641,7 +641,7 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
 	char addressString[75];
-	snprintf(addressString, sizeof(addressString), 
+	snprintf(addressString, sizeof(addressString),
 			 "%s %s - ", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit));
 	size_t len = strlen(addressString);
  	strncat(addressString, venues[cell_index->row].address, 99 - len);
@@ -655,7 +655,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 		GRect bounds = layer_get_bounds(cell_layer);
 		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 		GFont big_font;
-		
+
 		// If Russian switch from Roboto to Gothic which has some of the Cyrillic char set
 		if (strncmp(locale_current, "ru", 2) == 0) {
 			big_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
@@ -896,7 +896,7 @@ static void window_load(Window *window) {
 	text_layer_set_font(text_layer_primary_address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	text_layer_set_text(text_layer_primary_address, "");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
-	
+
 	#ifdef PBL_ROUND
 		text_layer_primary_distance = text_layer_create(GRect(0,65,bounds.size.w,20));
 		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_distance, 5);
@@ -1000,10 +1000,10 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			persist_write_int(KEY_THEME, config);
 			setup_theme_colors(config);
 		#endif
-		
+
 		int unit = text_tuple_distance_unit->value->int16;
 		persist_write_int(KEY_UNIT, unit);
-		config_set_unit(unit);	
+		config_set_unit(unit);
 	} else if(text_tuple_ready) {
 		if(!no_foursquare) {
 			getListOfLocations();
@@ -1031,7 +1031,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			} else {
 				strcpy(venue.address, _("No Address"));
 			}
-			
+
 			if(text_tuple_distance && text_tuple_distance_unit) {
 				strcpy(venue.distance, text_tuple_distance->value->cstring);
 				venue.distance_unit = text_tuple_distance_unit->value->int16;
@@ -1056,11 +1056,11 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				static char addressString[75];
 				#ifdef PBL_ROUND
 					text_layer_set_text(text_layer_primary_address, venues[0].address);
-					snprintf(addressString, sizeof(addressString), 
+					snprintf(addressString, sizeof(addressString),
 							 "%s %s", venues[0].distance, get_unit(venues[0].distance_unit));
 					text_layer_set_text(text_layer_primary_distance, addressString);
 				#else
-					snprintf(addressString, sizeof(addressString), 
+					snprintf(addressString, sizeof(addressString),
 							 "%s %s - %s", venues[0].distance, get_unit(venues[0].distance_unit), venues[0].address);
 					text_layer_set_text(text_layer_primary_address, addressString);
 				#endif
@@ -1090,12 +1090,12 @@ void in_dropped_handler(AppMessageResult reason, void *context) {
 static void update_app_glance(AppGlanceReloadSession *session,
 							  size_t limit, void *context) {
 	if(limit < 1) return;
-	
+
 	char *message = "";
-	uint32_t icon = RESOURCE_ID_IMAGE_SPOON_WHITE;
+	uint32_t icon = PUBLISHED_ID_ICON_SPOON;
 	time_t temp_time = time(NULL);
 	time_t expiration_time = APP_GLANCE_SLICE_NO_EXPIRATION;
-	
+
 	// TODO: Translate new string
 // 	strncpy(message, _("Go explore!"), 20);
 	strncpy(message, "Go explore!", 20);
@@ -1103,7 +1103,7 @@ static void update_app_glance(AppGlanceReloadSession *session,
 	if(!no_foursquare) {
 		if(strlen(lastCheckinVenue.name) > 0) {
 			strncpy(message, lastCheckinVenue.name, 25);
-			icon = RESOURCE_ID_IMAGE_CHECK_ON;
+			icon = PUBLISHED_ID_ICON_CHECK;
 			expiration_time = temp_time + DAY_IN_SECONDS;
 		} else {
 			// TODO: Give them a random friendly message
@@ -1111,7 +1111,7 @@ static void update_app_glance(AppGlanceReloadSession *session,
 	} else {
 		strncpy(message, _("Connect to Foursquare on Phone"), 40);
 	}
-	
+
 	const char *glance_message = message;
 	const uint32_t glance_icon = icon;
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "message (before sending): %s", message);
@@ -1149,9 +1149,9 @@ static void init(void) {
     } else {
 		localize_init(RESOURCE_ID_LOCALE_ENGLISH);
 	}
-	
+
 	localize_set_cache_size(2);
-	
+
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
 	window_set_window_handlers(s_main_window, (WindowHandlers) {
@@ -1163,7 +1163,7 @@ static void init(void) {
 
 static void deinit(void) {
   	animation_unschedule_all();
-	
+
 	app_glance_reload(update_app_glance, NULL);
 
 	text_layer_destroy_safe(text_layer_last_checkin_title);
@@ -1185,7 +1185,7 @@ static void deinit(void) {
 	window_destroy_safe(s_main_window);
 	checkin_deinit();
 	checkin_menu_deinit();
-	
+
 	localize_deinit();
 
 	#ifdef PBL_SDK_2

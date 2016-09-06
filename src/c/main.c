@@ -13,6 +13,7 @@
 #include "src/c/config.h"
 #include "src/c/paths.h"
 #include <pebble-localize/pebble-localize.h>
+#include "src/c/glance.h"
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
@@ -1087,45 +1088,6 @@ void in_dropped_handler(AppMessageResult reason, void *context) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Hello. It's me, I dropped a message: %i - %s", reason, translate_error(reason));
 }
 
-static void update_app_glance(AppGlanceReloadSession *session,
-							  size_t limit, void *context) {
-	if(limit < 1) return;
-
-	char *message = "";
-	uint32_t icon = PUBLISHED_ID_ICON_SPOON;
-	time_t temp_time = time(NULL);
-	time_t expiration_time = APP_GLANCE_SLICE_NO_EXPIRATION;
-
-	// TODO: Translate new string
-// 	strncpy(message, _("Go explore!"), 20);
-	strncpy(message, "Go explore!", 20);
-
-	if(!no_foursquare) {
-		if(strlen(lastCheckinVenue.name) > 0) {
-			strncpy(message, lastCheckinVenue.name, 25);
-			icon = PUBLISHED_ID_ICON_CHECK;
-			expiration_time = temp_time + DAY_IN_SECONDS;
-		} else {
-			// TODO: Give them a random friendly message
-		}
-	} else {
-		strncpy(message, _("Connect to Foursquare on Phone"), 40);
-	}
-
-	const char *glance_message = message;
-	const uint32_t glance_icon = icon;
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "message (before sending): %s", message);
-	const AppGlanceSlice slice = (AppGlanceSlice) {
-		.layout = {
-			.subtitle_template_string = glance_message,
-			.icon = glance_icon
-		},
-		.expiration_time = expiration_time
-	};
-
-	const AppGlanceResult result = app_glance_add_slice(session, slice);
-}
-
 static void init(void) {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
@@ -1164,7 +1126,21 @@ static void init(void) {
 static void deinit(void) {
   	animation_unschedule_all();
 
-	app_glance_reload(update_app_glance, NULL);
+	if(!no_foursquare) {
+		if(strlen(lastCheckinVenue.name) > 0) {
+			// char* name;
+			// strncpy(name, lastCheckinVenue.name, 25);
+			update_app_glance(lastCheckinVenue.name,
+									PUBLISHED_ID_ICON_CHECK);
+		} else {
+			// TODO: Give them a random friendly message
+		}
+	} else {
+		char *text = "";
+		strncpy(text, _("Connect to Foursquare on Phone"), 30);
+		update_app_glance(text,
+								PUBLISHED_ID_ICON_SPOON);
+	}
 
 	text_layer_destroy_safe(text_layer_last_checkin_title);
 	text_layer_destroy_safe(text_layer_last_checkin_venue);

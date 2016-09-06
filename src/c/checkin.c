@@ -6,6 +6,7 @@
 #include "src/c/common.h"
 #include "src/c/libs/pebble-assist.h"
 #include "src/c/paths.h"
+#include "src/c/glance.h"
 
 static Window *s_main_window;
 #ifdef PBL_SDK_3
@@ -46,6 +47,8 @@ static void countdown_tick(void *ctx);
 static int SCREEN_HEIGHT;
 static int SCREEN_WIDTH;
 
+char* last_checkin_venue_name;
+
 void checkin_result_receiver(bool result) {
 	hasResult = true;
 	checkinResult = result;
@@ -64,6 +67,9 @@ static void countdown_tick(void *ctx) {
 		start_countdown();
 	} else {
 // 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
+			// TODO: Add AppGlance here
+			char *venue = last_checkin_venue_name;
+			update_app_glance(venue, PUBLISHED_ID_ICON_CHECK);
 			window_stack_pop_all(true);
 	}
 }
@@ -73,9 +79,10 @@ void checkin_send_request(char venue_guid[128], char venue_name[512], int privat
 	if(venue_guid) {
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
 		Tuplet name_tuple = TupletCString(SPOON_NAME,  venue_name);
-		
+		last_checkin_venue_name = venue_name;
+
 		int broadcast_flag = BROADCAST_DEFAULT;
-		
+
 		if(private == 1) {
 			broadcast_flag = BROADCAST_PRIVATE;
 		} else if (twitter == 1 && facebook == 1) {
@@ -85,12 +92,12 @@ void checkin_send_request(char venue_guid[128], char venue_name[512], int privat
 		} else if(facebook == 1) {
 			broadcast_flag = BROADCAST_FACEBOOK;
 		}
-		
+
 		Tuplet broadcast_tuple = TupletInteger(SPOON_BROADCAST, broadcast_flag);
-		
+
 		DictionaryIterator *iter;
 		app_message_outbox_begin(&iter);
-		
+
 		if(iter == NULL) {
 			return;
 		}
@@ -98,9 +105,9 @@ void checkin_send_request(char venue_guid[128], char venue_name[512], int privat
 		dict_write_tuplet(iter, &name_tuple);
 		dict_write_tuplet(iter, &broadcast_tuple);
 		dict_write_end(iter);
-		
+
 		app_message_outbox_send();
-		
+
 		if(show_checkin) {
 			checkin_show();
 		}
@@ -129,10 +136,10 @@ void pulse_check_tick() {
 		#ifdef PBL_COLOR
 			back_color = checkinResult ? GColorJaegerGreen.argb : GColorSunsetOrange.argb;
 		#endif
-			
+
 		s_check_large_path = gpath_create(&CHECK_LARGE_PATH_POINTS);
 		text_layer_set_text(text_layer_status, checkinResult ? _("Checked In!") : _("Something went wrong :("));
-		
+
 		layer_mark_dirty(layer_check);
 		app_timer_cancel_safe(pulse_check_timer);
 		app_timer_cancel_safe(checkin_timeout_timer);
@@ -150,7 +157,7 @@ void checkin_timeout_tick() {
 	#ifdef PBL_COLOR
 		back_color = GColorDarkGray.argb;
 	#endif
-		
+
 	text_layer_set_text(text_layer_status, _("Timeout :("));
 	layer_mark_dirty(layer_check);
 }
@@ -208,7 +215,7 @@ void draw_layer_back(Layer *cell_layer, GContext *ctx) {
 
 static void window_load(Window *window) {
 	Layer *window_layer = window_get_root_layer(window);
-	
+
 	GRect bounds = layer_get_frame(window_layer);
 	SCREEN_HEIGHT = bounds.size.h;
 	SCREEN_WIDTH = bounds.size.w;
@@ -263,7 +270,7 @@ static void window_load(Window *window) {
 			s_status_bar, GColorClear, GColorBlack);
 		layer_add_child(
 			window_layer, status_bar_layer_get_layer(s_status_bar));
-		
+
 		layer_countdown_bar = layer_create((GRect) {
 			.origin = GPoint(0, STATUS_BAR_LAYER_HEIGHT - 2),
 			.size = CHECKIN_COUNTDOWN_BAR_SIZE

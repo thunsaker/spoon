@@ -78,8 +78,9 @@ void checkin_send_request(char venue_guid[128], char venue_name[512], int privat
 // 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Private: %i Twitter: %i Facebook: %i", private, twitter, facebook);
 	if(venue_guid) {
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
-		Tuplet name_tuple = TupletCString(SPOON_NAME,  venue_name);
+		Tuplet name_tuple = TupletCString(SPOON_NAME, venue_name);
 		last_checkin_venue_name = venue_name;
+		strncpy(last_checkin_venue_name, venue_name, 25);
 
 		int broadcast_flag = BROADCAST_DEFAULT;
 

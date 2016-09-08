@@ -157,10 +157,9 @@ function fetchClosestVenues(token, position) {
 							maxName = 20;
 							maxAddress = 10;
 						}
-
 						var venueName = element.name.length >= maxName ?
-							element.name.substring(0,maxName-1).trim().replace('\'','') :
-							element.name.replace('\'','');
+							element.name.substring(0,maxName-1).trim() :
+							element.name;
 						var venueAddress = element.location.address ?
 							element.location.address.length > maxAddress ? element.location.address.substring(0,maxAddress-1).trim() :
 							element.location.address : '';
@@ -186,9 +185,7 @@ function fetchClosestVenues(token, position) {
 						} else {
 							appMessageQueue.push({'message': {'id':venueId, 'name':venueName, 'address':venueAddress, 'distance':venueDistance.toString(), 'unit':venueDistanceUnit, 'index':offsetIndex}});
 						}
-						// Send them in clusters of 5
-// 						if(index % 5 == 1 || index == max_venues/2 || index == max_venues)
-							sendAppMessage();
+						sendAppMessage();
 					});
 				} else {
 					//console.log('Invalid response received! ' + JSON.stringify(req));
@@ -229,8 +226,8 @@ function fetchMostRecentCheckin(token) {
 					checkinItems.forEach(function (element, index, array) {
 						var venueId = element.venue.id.replace('\'','');
 						var venueName = element.venue.name.length > 45 ?
-							element.venue.name.substring(0,45).replace('\'','')
-							: element.venue.name.replace('\'','');
+							element.venue.name.substring(0,45) :
+							element.venue.name;
 						var checkinString = "";
 						var checkinDate = new Date(element.createdAt*1000);
  						var minutes = checkinDate.getMinutes();
@@ -254,12 +251,10 @@ function fetchMostRecentCheckin(token) {
 		sendAppMessage();
 	};
 	reqRecent.ontimeout = function() {
-		//console.log('HTTP request timed out');
 		appMessageQueue.push({'message': {'error':1}});
 		sendAppMessage();
 	};
 	reqRecent.onerror = function() {
-		//console.log('HTTP request return error');
 		appMessageQueue.push({'message': {'error':0}});
 		sendAppMessage();
 	};

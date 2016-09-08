@@ -66,8 +66,6 @@ static void countdown_tick(void *ctx) {
 	if(progress > 0) {
 		start_countdown();
 	} else {
-// 		APP_LOG(APP_LOG_LEVEL_DEBUG, "Pop it like it's hot!");
-			// TODO: Add AppGlance here
 			char *venue = last_checkin_venue_name;
 			update_app_glance(venue, PUBLISHED_ID_ICON_CHECK);
 			window_stack_pop_all(true);
@@ -240,7 +238,11 @@ static void window_load(Window *window) {
 	// Text Status
 	text_layer_status = text_layer_create(GRect(10,120 - STATUS_BAR_OFFSET,bounds.size.w-20,60));
 	#ifdef PBL_COLOR
-		text_layer_set_text_color(text_layer_status, GColorBlack);
+		if(back_color == GColorBlack.argb) {
+			text_layer_set_text_color(text_layer_status, GColorWhite);
+		} else {
+			text_layer_set_text_color(text_layer_status, GColorBlack);
+		}
 	#else
 		text_layer_set_text_color(text_layer_status, GColorWhite);
 	#endif

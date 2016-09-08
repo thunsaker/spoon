@@ -724,23 +724,23 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 static void setup_theme_colors(int theme_id) {
 	switch(theme_id) {
 		case 1:
-		colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
+			break;
 		case 2:
-		colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
+			break;
 		case 3:
-		colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
+			break;
 		case 4:
-		colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
+			break;
 		case 5:
-		colors_init(GColorDarkGray.argb, GColorBlack.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorDarkGray.argb, GColorBlack.argb, GColorWhite.argb);
+			break;
 		default:
-		colors_init(GColorJaegerGreen.argb, GColorFolly.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorJaegerGreen.argb, GColorFolly.argb, GColorWhite.argb);
+			break;
 	}
 	window_set_background_color(s_main_window, (GColor)back_color);
 }
@@ -1042,9 +1042,13 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				venue.isRecent = true;
 				lastCheckinVenue = venue;
 
-				text_layer_set_text(text_layer_last_checkin_venue, lastCheckinVenue.name);
+				text_layer_set_text(text_layer_last_checkin_venue,
+										  lastCheckinVenue.name);
 				// HACK: Using the address field for date here
- 				text_layer_set_text(text_layer_last_checkin_date, lastCheckinVenue.address);
+ 				text_layer_set_text(text_layer_last_checkin_date,
+										  lastCheckinVenue.address);
+				update_app_glance(lastCheckinVenue.name,
+										PUBLISHED_ID_ICON_CHECK);
 			} else {
 				venue.isRecent = false;
 				venues[venue.index] = venue;
@@ -1126,16 +1130,7 @@ static void init(void) {
 static void deinit(void) {
   	animation_unschedule_all();
 
-	if(!no_foursquare) {
-		if(strlen(lastCheckinVenue.name) > 0) {
-			// char* name;
-			// strncpy(name, lastCheckinVenue.name, 25);
-			update_app_glance(lastCheckinVenue.name,
-									PUBLISHED_ID_ICON_CHECK);
-		} else {
-			// TODO: Give them a random friendly message
-		}
-	} else {
+	if(no_foursquare) {
 		char *text = "";
 		strncpy(text, _("Connect to Foursquare on Phone"), 30);
 		update_app_glance(text,

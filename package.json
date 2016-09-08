@@ -3,6 +3,8 @@
     "dependencies": {
         "pebble-localize": "^0.1.0"
     },
+    "license":"MIT",
+    "repository":"https://github.com/thunsaker/spoon",
     "keywords": [],
     "name": "spoon",
     "pebble": {
@@ -33,10 +35,9 @@
         "resources": {
             "media": [
                 {
-                    "file": "images/spoon_2_menu_icon.png",
+                    "file": "images/spoon_menu_icon.png",
                     "menuIcon": true,
                     "name": "IMAGE_MENU",
-                    "targetPlatforms": null,
                     "type": "bitmap"
                 },
                 {
@@ -78,6 +79,18 @@
                     "file": "data/locale_english.bin",
                     "name": "LOCALE_ENGLISH",
                     "type": "raw"
+                }
+            ],
+            "publishedMedia": [
+                {
+                    "name":"ICON_SPOON",
+                    "id":1,
+                    "glance":"IMAGE_MENU"
+                },
+                {
+                    "name":"ICON_CHECK",
+                    "id":2,
+                    "glance":"IMAGE_CHECK_ON"
                 }
             ]
         },

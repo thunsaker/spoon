@@ -13,6 +13,7 @@
 #include "src/c/config.h"
 #include "src/c/paths.h"
 #include <pebble-localize/pebble-localize.h>
+#include "src/c/glance.h"
 
 #define BOX_HEIGHT 84
 #define ROW_HEIGHT 52
@@ -147,7 +148,7 @@ static void getListOfLocations() {
 	is_refreshing = true;
 	Tuplet refresh_tuple = TupletInteger(SPOON_REFRESH, MAX_VENUES);
 	Tuplet lang_tuple = TupletCString(SPOON_NAME, locale_current);
-	
+
 	DictionaryIterator *iter;
 	app_message_outbox_begin(&iter);
 	if (iter == NULL) {
@@ -641,7 +642,7 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
 
 static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *cell_index, void *data) {
 	char addressString[75];
-	snprintf(addressString, sizeof(addressString), 
+	snprintf(addressString, sizeof(addressString),
 			 "%s %s - ", venues[cell_index->row].distance, get_unit(venues[cell_index->row].distance_unit));
 	size_t len = strlen(addressString);
  	strncat(addressString, venues[cell_index->row].address, 99 - len);
@@ -655,7 +656,7 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 		GRect bounds = layer_get_bounds(cell_layer);
 		GFont little_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
 		GFont big_font;
-		
+
 		// If Russian switch from Roboto to Gothic which has some of the Cyrillic char set
 		if (strncmp(locale_current, "ru", 2) == 0) {
 			big_font = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD);
@@ -723,23 +724,23 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 static void setup_theme_colors(int theme_id) {
 	switch(theme_id) {
 		case 1:
-		colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorOrange.argb, GColorMalachite.argb, GColorWhite.argb);
+			break;
 		case 2:
-		colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorFolly.argb, GColorVividCerulean.argb, GColorWhite.argb);
+			break;
 		case 3:
-		colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorYellow.argb, GColorIndigo.argb, GColorWhite.argb);
+			break;
 		case 4:
-		colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorTiffanyBlue.argb, GColorOrange.argb, GColorWhite.argb);
+			break;
 		case 5:
-		colors_init(GColorDarkGray.argb, GColorBlack.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorDarkGray.argb, GColorBlack.argb, GColorWhite.argb);
+			break;
 		default:
-		colors_init(GColorJaegerGreen.argb, GColorFolly.argb, GColorWhite.argb);
-		break;
+			colors_init(GColorJaegerGreen.argb, GColorFolly.argb, GColorWhite.argb);
+			break;
 	}
 	window_set_background_color(s_main_window, (GColor)back_color);
 }
@@ -896,7 +897,7 @@ static void window_load(Window *window) {
 	text_layer_set_font(text_layer_primary_address, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	text_layer_set_text(text_layer_primary_address, "");
 	layer_add_child(layer_primary_back, text_layer_get_layer(text_layer_primary_address));
-	
+
 	#ifdef PBL_ROUND
 		text_layer_primary_distance = text_layer_create(GRect(0,65,bounds.size.w,20));
 		text_layer_enable_screen_text_flow_and_paging(text_layer_primary_distance, 5);
@@ -1000,10 +1001,10 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			persist_write_int(KEY_THEME, config);
 			setup_theme_colors(config);
 		#endif
-		
+
 		int unit = text_tuple_distance_unit->value->int16;
 		persist_write_int(KEY_UNIT, unit);
-		config_set_unit(unit);	
+		config_set_unit(unit);
 	} else if(text_tuple_ready) {
 		if(!no_foursquare) {
 			getListOfLocations();
@@ -1031,7 +1032,7 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 			} else {
 				strcpy(venue.address, _("No Address"));
 			}
-			
+
 			if(text_tuple_distance && text_tuple_distance_unit) {
 				strcpy(venue.distance, text_tuple_distance->value->cstring);
 				venue.distance_unit = text_tuple_distance_unit->value->int16;
@@ -1041,9 +1042,13 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				venue.isRecent = true;
 				lastCheckinVenue = venue;
 
-				text_layer_set_text(text_layer_last_checkin_venue, lastCheckinVenue.name);
+				text_layer_set_text(text_layer_last_checkin_venue,
+										  lastCheckinVenue.name);
 				// HACK: Using the address field for date here
- 				text_layer_set_text(text_layer_last_checkin_date, lastCheckinVenue.address);
+ 				text_layer_set_text(text_layer_last_checkin_date,
+										  lastCheckinVenue.address);
+				update_app_glance(lastCheckinVenue.name,
+										PUBLISHED_ID_ICON_CHECK);
 			} else {
 				venue.isRecent = false;
 				venues[venue.index] = venue;
@@ -1056,11 +1061,11 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 				static char addressString[75];
 				#ifdef PBL_ROUND
 					text_layer_set_text(text_layer_primary_address, venues[0].address);
-					snprintf(addressString, sizeof(addressString), 
+					snprintf(addressString, sizeof(addressString),
 							 "%s %s", venues[0].distance, get_unit(venues[0].distance_unit));
 					text_layer_set_text(text_layer_primary_distance, addressString);
 				#else
-					snprintf(addressString, sizeof(addressString), 
+					snprintf(addressString, sizeof(addressString),
 							 "%s %s - %s", venues[0].distance, get_unit(venues[0].distance_unit), venues[0].address);
 					text_layer_set_text(text_layer_primary_address, addressString);
 				#endif
@@ -1110,9 +1115,9 @@ static void init(void) {
     } else {
 		localize_init(RESOURCE_ID_LOCALE_ENGLISH);
 	}
-	
+
 	localize_set_cache_size(2);
-	
+
 	s_main_window = window_create();
 	window_set_click_config_provider(s_main_window, click_config_provider);
 	window_set_window_handlers(s_main_window, (WindowHandlers) {
@@ -1124,6 +1129,13 @@ static void init(void) {
 
 static void deinit(void) {
   	animation_unschedule_all();
+
+	if(no_foursquare) {
+		char *text = "";
+		strncpy(text, _("Connect to Foursquare on Phone"), 30);
+		update_app_glance(text,
+								PUBLISHED_ID_ICON_SPOON);
+	}
 
 	text_layer_destroy_safe(text_layer_last_checkin_title);
 	text_layer_destroy_safe(text_layer_last_checkin_venue);
@@ -1144,7 +1156,7 @@ static void deinit(void) {
 	window_destroy_safe(s_main_window);
 	checkin_deinit();
 	checkin_menu_deinit();
-	
+
 	localize_deinit();
 
 	#ifdef PBL_SDK_2

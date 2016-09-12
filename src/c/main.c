@@ -513,7 +513,7 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
 
 			// Start timer to grow circle
 			circle_grow_timer = app_timer_register(100, circle_grow_timer_tick, NULL);
-			checkin_send_request(venueid, venuename, 0, 0, 0, false);
+			checkin_send_request(venueid, venuename, 0, 0, 0, true);
 			vibes_double_pulse();
 		}
 	}

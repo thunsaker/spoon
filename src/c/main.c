@@ -417,7 +417,7 @@ void circle_grow_timer_tick() {
 		circle_radius_count = 1;
 
 		app_timer_cancel_safe(circle_grow_timer);
-		checkin_show();
+		checkin_send_request(venueid, venuename, 0, 0, 0, true);
 	}
 }
 
@@ -513,7 +513,6 @@ static void select_long_click_handler(ClickRecognizerRef recognizer, void *conte
 
 			// Start timer to grow circle
 			circle_grow_timer = app_timer_register(100, circle_grow_timer_tick, NULL);
-			checkin_send_request(venueid, venuename, 0, 0, 0, true);
 			vibes_double_pulse();
 		}
 	}
@@ -667,19 +666,19 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 			GRect bitmap_bounds = gbitmap_get_bounds(image_cog);
 			#ifdef PBL_ROUND
 				graphics_draw_text(ctx, _("Powered by Foursquare"), little_font,
-								   GRect(10, (bounds.size.h/2) - 15, bounds.size.w - 20, 25),
-								   GTextOverflowModeTrailingEllipsis,
-								   GTextAlignmentCenter,
-								   NULL);
+									GRect(10, (bounds.size.h/2) - 15, bounds.size.w - 20, 25),
+									GTextOverflowModeTrailingEllipsis,
+									GTextAlignmentCenter,
+									NULL);
 				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
 										 (bounds.size.h/2) + 5,
 										 bitmap_bounds.size.w, bitmap_bounds.size.h);
 			#else
 				graphics_draw_text(ctx, _("Powered by Foursquare"), little_font,
-								   GRect(5, 4, bounds.size.w - 10, 20),
-								   GTextOverflowModeFill,
-								   GTextAlignmentCenter,
-								   NULL);
+									GRect(5, 4, bounds.size.w - 10, 20),
+									GTextOverflowModeFill,
+									GTextAlignmentCenter,
+									NULL);
 				GRect cog_bounds = GRect((bounds.size.w / 2) - (bitmap_bounds.size.w / 2),
 										 30,
 										 bitmap_bounds.size.w, bitmap_bounds.size.h);
@@ -695,26 +694,26 @@ static void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuI
 					GTextOverflowModeTrailingEllipsis,
 					GTextAlignmentCenter);
 				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
-								   GRect(10, text_size.h > 25 ? 7 : 20, bounds.size.w - 20, 50),
-								   GTextOverflowModeTrailingEllipsis,
-								   GTextAlignmentCenter,
-								   NULL);
+									GRect(10, text_size.h > 25 ? 7 : 20, bounds.size.w - 20, 50),
+									GTextOverflowModeTrailingEllipsis,
+									GTextAlignmentCenter,
+									NULL);
 				graphics_draw_text(ctx, addressString, little_font,
-								   GRect(10, bounds.size.h-24, bounds.size.w - 20, 20),
-								   GTextOverflowModeTrailingEllipsis,
-								   GTextAlignmentCenter,
-								   NULL);
+									GRect(10, bounds.size.h-24, bounds.size.w - 20, 20),
+									GTextOverflowModeTrailingEllipsis,
+									GTextAlignmentCenter,
+									NULL);
 			#else
 				graphics_draw_text(ctx, venues[cell_index->row].name, big_font,
-								   GRect(5, 4, bounds.size.w - 10, 25),
-								   GTextOverflowModeTrailingEllipsis,
-								   GTextAlignmentLeft,
-								   NULL);
+									GRect(5, 4, bounds.size.w - 10, 25),
+									GTextOverflowModeTrailingEllipsis,
+									GTextAlignmentLeft,
+									NULL);
 				graphics_draw_text(ctx, addressString, little_font,
-								   GRect(5, 30, bounds.size.w - 10, 20),
-								   GTextOverflowModeTrailingEllipsis,
-								   GTextAlignmentLeft,
-								   NULL);
+									GRect(5, 30, bounds.size.w - 10, 20),
+									GTextOverflowModeTrailingEllipsis,
+									GTextAlignmentLeft,
+									NULL);
 			#endif
 		}
 	#endif
@@ -868,7 +867,7 @@ static void window_load(Window *window) {
 	// Text 1
 	#ifdef PBL_ROUND
 		text_layer_primary = text_layer_create(GRect(15,5,bounds.size.w-25,74));
-   		text_layer_enable_screen_text_flow_and_paging(text_layer_primary, 5);
+			text_layer_enable_screen_text_flow_and_paging(text_layer_primary, 5);
 	#else
 		text_layer_primary = text_layer_create(GRect(10,10,bounds.size.w-10,74));
 	#endif
@@ -949,23 +948,23 @@ static void window_unload(Window *window) {
 }
 
 char *translate_error(AppMessageResult result) {
-  switch (result) {
-    case APP_MSG_OK: return "APP_MSG_OK";
-    case APP_MSG_SEND_TIMEOUT: return "APP_MSG_SEND_TIMEOUT";
-    case APP_MSG_SEND_REJECTED: return "APP_MSG_SEND_REJECTED";
-    case APP_MSG_NOT_CONNECTED: return "APP_MSG_NOT_CONNECTED";
-    case APP_MSG_APP_NOT_RUNNING: return "APP_MSG_APP_NOT_RUNNING";
-    case APP_MSG_INVALID_ARGS: return "APP_MSG_INVALID_ARGS";
-    case APP_MSG_BUSY: return "APP_MSG_BUSY";
-    case APP_MSG_BUFFER_OVERFLOW: return "APP_MSG_BUFFER_OVERFLOW";
-    case APP_MSG_ALREADY_RELEASED: return "APP_MSG_ALREADY_RELEASED";
-    case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "APP_MSG_CALLBACK_ALREADY_REGISTERED";
-    case APP_MSG_CALLBACK_NOT_REGISTERED: return "APP_MSG_CALLBACK_NOT_REGISTERED";
-    case APP_MSG_OUT_OF_MEMORY: return "APP_MSG_OUT_OF_MEMORY";
-    case APP_MSG_CLOSED: return "APP_MSG_CLOSED";
-    case APP_MSG_INTERNAL_ERROR: return "APP_MSG_INTERNAL_ERROR";
-    default: return "UNKNOWN ERROR";
-  }
+	switch (result) {
+		case APP_MSG_OK: return "APP_MSG_OK";
+		case APP_MSG_SEND_TIMEOUT: return "APP_MSG_SEND_TIMEOUT";
+		case APP_MSG_SEND_REJECTED: return "APP_MSG_SEND_REJECTED";
+		case APP_MSG_NOT_CONNECTED: return "APP_MSG_NOT_CONNECTED";
+		case APP_MSG_APP_NOT_RUNNING: return "APP_MSG_APP_NOT_RUNNING";
+		case APP_MSG_INVALID_ARGS: return "APP_MSG_INVALID_ARGS";
+		case APP_MSG_BUSY: return "APP_MSG_BUSY";
+		case APP_MSG_BUFFER_OVERFLOW: return "APP_MSG_BUFFER_OVERFLOW";
+		case APP_MSG_ALREADY_RELEASED: return "APP_MSG_ALREADY_RELEASED";
+		case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "APP_MSG_CALLBACK_ALREADY_REGISTERED";
+		case APP_MSG_CALLBACK_NOT_REGISTERED: return "APP_MSG_CALLBACK_NOT_REGISTERED";
+		case APP_MSG_OUT_OF_MEMORY: return "APP_MSG_OUT_OF_MEMORY";
+		case APP_MSG_CLOSED: return "APP_MSG_CLOSED";
+		case APP_MSG_INTERNAL_ERROR: return "APP_MSG_INTERNAL_ERROR";
+		default: return "UNKNOWN ERROR";
+	}
 }
 
 void out_sent_handler(DictionaryIterator *sent, void *context) {
@@ -1018,7 +1017,9 @@ void in_received_handler(DictionaryIterator *iter, void *context) {
 		persist_read_string(KEY_TOKEN, key_stored, sizeof(key_stored));
 		no_foursquare = false;
 	} else if(text_tuple_result) {
-		checkin_result_receiver((bool)text_tuple_result->value->int16);
+		checkin_result_receiver(
+			(bool)text_tuple_result->value->int16,
+			text_tuple_name->value->cstring);
 	} else if(!text_tuple_token) {
 		int index = dict_find(iter, SPOON_INDEX)->value->int16;
 		if(text_tuple_name) {
@@ -1104,15 +1105,15 @@ static void init(void) {
 	#endif
 
 	// Detect system locale
-    locale_current = i18n_get_system_locale();
+	locale_current = i18n_get_system_locale();
 
-    if (strncmp(locale_current, "fr", 2) == 0) {
-        localize_init(RESOURCE_ID_LOCALE_FRENCH);
-    } else if (strncmp(locale_current, "es", 2) == 0) {
-        localize_init(RESOURCE_ID_LOCALE_SPANISH);
-    } else if (strncmp(locale_current, "de", 2) == 0) {
-        localize_init(RESOURCE_ID_LOCALE_GERMAN);
-    } else {
+	if (strncmp(locale_current, "fr", 2) == 0) {
+		localize_init(RESOURCE_ID_LOCALE_FRENCH);
+	} else if (strncmp(locale_current, "es", 2) == 0) {
+		localize_init(RESOURCE_ID_LOCALE_SPANISH);
+	} else if (strncmp(locale_current, "de", 2) == 0) {
+		localize_init(RESOURCE_ID_LOCALE_GERMAN);
+	} else {
 		localize_init(RESOURCE_ID_LOCALE_ENGLISH);
 	}
 

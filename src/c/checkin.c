@@ -49,7 +49,8 @@ static int SCREEN_WIDTH;
 
 char* last_checkin_venue_name;
 
-void checkin_result_receiver(bool result) {
+void checkin_result_receiver(bool result, char name[512]) {
+	last_checkin_venue_name = name;
 	hasResult = true;
 	checkinResult = result;
 }
@@ -66,19 +67,19 @@ static void countdown_tick(void *ctx) {
 	if(progress > 0) {
 		start_countdown();
 	} else {
-			char *venue = last_checkin_venue_name;
-			update_app_glance(venue, PUBLISHED_ID_ICON_CHECK);
-			window_stack_pop_all(true);
+		window_stack_pop_all(true);
 	}
 }
 
 void checkin_send_request(char venue_guid[128], char venue_name[512], int private, int twitter, int facebook, bool show_checkin) {
 // 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Private: %i Twitter: %i Facebook: %i", private, twitter, facebook);
 	if(venue_guid) {
+		if(show_checkin) {
+			checkin_show();
+		}
+
 		Tuplet guid_tuple = TupletCString(SPOON_ID, venue_guid);
 		Tuplet name_tuple = TupletCString(SPOON_NAME, venue_name);
-		last_checkin_venue_name = venue_name;
-		strncpy(last_checkin_venue_name, venue_name, 25);
 
 		int broadcast_flag = BROADCAST_DEFAULT;
 
@@ -106,10 +107,6 @@ void checkin_send_request(char venue_guid[128], char venue_name[512], int privat
 		dict_write_end(iter);
 
 		app_message_outbox_send();
-
-		if(show_checkin) {
-			checkin_show();
-		}
 	} else {
 		return;
 	}
@@ -143,6 +140,9 @@ void pulse_check_tick() {
 		app_timer_cancel_safe(pulse_check_timer);
 		app_timer_cancel_safe(checkin_timeout_timer);
 		start_countdown();
+
+		char *venue = last_checkin_venue_name;
+		update_app_glance(venue, PUBLISHED_ID_ICON_CHECK);
 	} else {
 		pulse_check_timer = app_timer_register(PBL_IF_ROUND_ELSE(50, 100), pulse_check_tick, NULL);
 	}
